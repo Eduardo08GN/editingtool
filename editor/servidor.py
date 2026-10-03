@@ -119,6 +119,8 @@ def detalhe_campanha(nome):
         entregue = qa.get("entregue") if qa.get("entregue") and os.path.exists(qa["entregue"]) else None
         if not entregue: qa, plano = {}, {}       # ⛔ relatorio de um video que nao existe mais nao vai para a tela
         etapa = PRODUTOR.etapas.get(c["id"]) if PRODUTOR.campanha == nome else None
+        # ⭐ "erro"/"parado" da rodada nao escondem um video que existe (ex.: refeito depois pela linha de comando)
+        if etapa in ("erro", "parado") and entregue: etapa = None
         if not etapa: etapa = "entregue" if entregue else "pendente"
         if etapa == "entregue" and qa.get("avisos"): etapa = "aviso"
         criativos.append({

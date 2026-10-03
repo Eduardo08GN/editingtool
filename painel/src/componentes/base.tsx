@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { AlertTriangle, Check, X } from "lucide-react";
 import { midia, miniatura, type Criativo } from "../api";
 import { link } from "../rota";
@@ -13,26 +13,26 @@ export function Selo({ etapa }: { etapa: Criativo["etapa"] }) {
 
 export function Girando() { return <span className="spin" aria-hidden />; }
 
-// ⭐ entregue: o cartao E' o video; passando o mouse ele toca (com som; se o navegador barrar, mudo)
+// ⭐ entregue: o cartao E' o video; passando o mouse ele toca (com som; se o navegador barrar, mudo).
+// ⛔ o <video> so' EXISTE durante o hover (2026-10-03): invisivel o tempo todo, o Edge em modo app
+//    desenhava um resto do player ("1:00") por cima do selo — e 25 players montados pesavam a janela.
 export function CardCriativo({ c }: { c: Criativo }) {
-  const ref = useRef<HTMLVideoElement>(null);
+  const [hover, setHover] = useState(false);
   const [tocando, setTocando] = useState(false);
-  const tocar = (sim: boolean) => {
-    const el = ref.current; if (!el) return;
-    if (sim) {
-      el.currentTime = 0; el.muted = false;
-      el.play().catch(() => { el.muted = true; return el.play(); }).then(() => setTocando(true)).catch(() => undefined);
-    } else { el.pause(); setTocando(false); }
-  };
   const trabalhando = c.etapa === "narrando" || c.etapa === "renderizando";
+  const quando = (el: HTMLVideoElement | null) => {
+    if (!el || !hover) return;
+    el.muted = false;
+    el.play().catch(() => { el.muted = true; return el.play(); }).then(() => setTocando(true)).catch(() => undefined);
+  };
   return (
     <a className="panel vcard" href={link.criativo(c.id)}
-       onMouseEnter={() => c.entregue && tocar(true)} onMouseLeave={() => c.entregue && tocar(false)}>
+       onMouseEnter={() => c.entregue && setHover(true)} onMouseLeave={() => { setHover(false); setTocando(false); }}>
       <div className="stage">
         {c.entregue && !trabalhando ? (
           <>
             <img src={miniatura(c.entregue, 360, 2.0)} alt="" loading="lazy" decoding="async" className={tocando ? "some" : ""} />
-            <video ref={ref} src={midia(c.entregue)} loop playsInline preload="none" aria-hidden className={tocando ? "" : "some"} />
+            {hover && <video ref={quando} src={midia(c.entregue)} loop playsInline preload="auto" aria-hidden className={tocando ? "" : "some"} />}
           </>
         ) : (
           <div className="stage-vazio"><div>{trabalhando && <Girando />}<strong>{c.angulo}</strong></div></div>

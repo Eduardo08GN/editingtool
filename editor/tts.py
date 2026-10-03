@@ -7,7 +7,7 @@
    velocidade corrigida, dentro de [velocidade_min, velocidade_max] — voz acelerada demais soa
    robo; e' melhor um criativo 3 s mais longo do que uma voz de esquilo.
 """
-import binascii, hashlib, json, os, time, urllib.error, urllib.request
+import binascii, hashlib, http.client, json, os, time, urllib.error, urllib.request
 
 from . import config
 
@@ -55,8 +55,14 @@ def _minimax(texto, saida_mp3, cfg, velocidade):
     for tent in range(5):
         try:
             r = _post("/v1/t2a_v2", corpo)
-        except (urllib.error.URLError, TimeoutError) as e:
-            ultimo = str(e); time.sleep(3 * (tent + 1)); continue
+        except urllib.error.HTTPError as e:
+            ultimo = f"HTTP {e.code}"
+            if e.code in (429, 500, 502, 503, 504): time.sleep(4 * (tent + 1)); continue
+            break
+        # ⛔ 2026-10-03 (criativo 2.3): a MiniMax fechou a conexao sem resposta (RemoteDisconnected, que e'
+        #    ConnectionError e NAO URLError) e o criativo morreu na 1a tentativa. Queda de rede = tenta de novo.
+        except (urllib.error.URLError, TimeoutError, ConnectionError, http.client.HTTPException, OSError) as e:
+            ultimo = f"{type(e).__name__}: {e}"; time.sleep(3 * (tent + 1)); continue
         st = (r.get("base_resp") or {}).get("status_code")
         if st == 0 and (r.get("data") or {}).get("audio"):
             with open(saida_mp3, "wb") as f: f.write(binascii.unhexlify(r["data"]["audio"]))
