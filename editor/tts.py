@@ -110,14 +110,32 @@ def sintetizar(texto, saida_wav, cfg, velocidade=None):
     return config.duracao(saida_wav)
 
 
+# ⛔ MEDIDO em 2026-10-03 (25 criativos): o `speed` da MiniMax NAO e' linear. Duracao ~ 1/speed^k
+# com k ~ 2,4 (24,2 s a 1,0 viraram 16,0 s a 1,2 — e nao 20 s). Corrigir com a regra linear
+# passava do ponto nos dois sentidos. Agora: chute com k=2,4 e, se ainda fora, secante com o k medido.
+EXPOENTE_SPEED = 2.4
+
+
 def narrar(texto, alvo_s, saida_wav, cfg):
-    """Narracao ajustada ao alvo. Devolve {'duracao', 'velocidade', 'tentativas'}."""
-    v0 = float(cfg.get("velocidade") or 1.0)
-    dur = sintetizar(texto, saida_wav, cfg, v0)
-    info = {"duracao": round(dur, 2), "velocidade": v0, "tentativas": 1}
-    if not cfg.get("ajustar_duracao") or not alvo_s: return info
-    if abs(dur - alvo_s) <= float(cfg.get("tolerancia_s", 1.5)): return info
-    v1 = min(max(v0 * dur / float(alvo_s), float(cfg["velocidade_min"])), float(cfg["velocidade_max"]))
-    if abs(v1 - v0) < 0.02: return info
-    dur = sintetizar(texto, saida_wav, cfg, v1)
-    return {"duracao": round(dur, 2), "velocidade": round(v1, 3), "tentativas": 2}
+    """Narracao ajustada ao alvo (ate' 3 sinteses). Devolve {'duracao', 'velocidade', 'tentativas'}."""
+    import math
+    vmin, vmax = float(cfg["velocidade_min"]), float(cfg["velocidade_max"])
+    tol = float(cfg.get("tolerancia_s", 1.5))
+    v = float(cfg.get("velocidade") or 1.0)
+    pontos = [(v, sintetizar(texto, saida_wav, cfg, v))]
+    if not cfg.get("ajustar_duracao") or not alvo_s:
+        return {"duracao": round(pontos[0][1], 2), "velocidade": v, "tentativas": 1}
+    k = EXPOENTE_SPEED
+    while abs(pontos[-1][1] - alvo_s) > tol and len(pontos) < 3:
+        if len(pontos) >= 2:
+            (va, da), (vb, db) = pontos[-2], pontos[-1]
+            if abs(math.log(vb / va)) > 1e-3 and da > 0 and db > 0:
+                k = min(max(math.log(da / db) / math.log(vb / va), 0.8), 4.0)
+        vb, db = pontos[-1]
+        nv = min(max(vb * (db / float(alvo_s)) ** (1.0 / k), vmin), vmax)
+        if abs(nv - vb) < 0.01: break
+        pontos.append((nv, sintetizar(texto, saida_wav, cfg, nv)))
+    # fica com a tentativa mais perto do alvo (e garante que o wav em disco e' ela)
+    vbest, dbest = min(pontos, key=lambda p: abs(p[1] - alvo_s))
+    if (vbest, dbest) != pontos[-1]: sintetizar(texto, saida_wav, cfg, vbest)
+    return {"duracao": round(dbest, 2), "velocidade": round(vbest, 3), "tentativas": len(pontos)}

@@ -36,19 +36,33 @@ def _whispercpp(wav, modelo, idioma, dica):
             for s in d["transcription"] if s["text"].strip()]
 
 
-def ouvir(wav, cfg, dica=""):
-    """[(palavra, t0, t1)] do audio, com cache ao lado do wav."""
-    cache = wav + ".palavras.json"
-    chave = f"{os.path.getsize(wav)}|{os.path.getmtime(wav)}|{cfg['motor']}|{cfg['modelo']}"
+def ouvir(wav, cfg, motor=None):
+    """[(palavra, t0, t1)] do audio, com cache ao lado do wav.
+    ⛔ SEM `initial_prompt` com a copy (medido em 2026-10-03): com a copy inteira como dica o
+    whisper "acha que ja' ouviu" e pula trechos — em 6 de 25 criativos sobrou so' o CTA."""
+    motor = motor or cfg.get("motor") or "faster"
+    cache = wav + f".{motor}.palavras.json"
+    chave = f"{os.path.getsize(wav)}|{os.path.getmtime(wav)}|{motor}|{cfg['modelo']}"
     d = config.ler_json(cache)
     if d and d.get("chave") == chave: return [tuple(x) for x in d["palavras"]]
-    fn = _whispercpp if cfg.get("motor") == "whispercpp" else _faster
     try:
-        pal = fn(wav, cfg["modelo"], cfg["idioma"], dica)
+        pal = (_whispercpp if motor == "whispercpp" else _faster)(wav, cfg["modelo"], cfg["idioma"], "")
     except ImportError:
-        pal = _whispercpp(wav, cfg["modelo"], cfg["idioma"], dica)
+        pal = _whispercpp(wav, cfg["modelo"], cfg["idioma"], "")
     config.escrever_json(cache, {"chave": chave, "palavras": pal})
     return pal
+
+
+def proporcional(copy, dur):
+    """Ultimo recurso: espalha as palavras da copy pela duracao, pelo numero de letras (+ pausa
+    nas pontuacoes). Legenda aproximada > criativo sem legenda; o QA continua avisando."""
+    import re
+    ws = [w for w in copy.split() if w.strip()]
+    pesos = [len(re.sub(r"\W", "", w)) + 1.5 + (3 if re.search(r"[.,!?;:]$", w) else 0) for w in ws]
+    tot = sum(pesos) or 1; t = 0.0; out = []
+    for w, p in zip(ws, pesos):
+        d = dur * p / tot; out.append((w, t, t + d * 0.85)); t += d
+    return out
 
 
 def _cmp(p):
@@ -66,7 +80,9 @@ def casar_texto(ouvidas, esperado):
     exp = [w for w in (esperado or "").split() if w.strip()]
     if not exp or not ouvidas: return list(ouvidas), {"razao": 0.0, "trocas": 0, "extras": 0, "faltas": 0}
     A, B = [_cmp(w) for w in exp], [_cmp(w[0]) for w in ouvidas]
-    razao = difflib.SequenceMatcher(None, " ".join(A), " ".join(B)).ratio()
+    # ⛔ autojunk=False (medido em 2026-10-03): com o padrao (True), texto > 200 caracteres tem espaco e
+    # vogais tratados como "lixo" e a razao despenca ao acaso (0,03 para fala quase identica).
+    razao = difflib.SequenceMatcher(None, " ".join(A), " ".join(B), autojunk=False).ratio()
     rel = {"razao": round(razao, 3), "trocas": 0, "extras": 0, "faltas": 0}
     if razao < 0.70:
         return list(ouvidas), rel
@@ -90,7 +106,19 @@ def casar_texto(ouvidas, esperado):
 
 
 def alinhar(wav, copy, cfg):
-    ouvidas = ouvir(wav, cfg, dica=copy)
-    palavras, rel = casar_texto(ouvidas, copy)
-    rel["ouvido"] = " ".join(w[0] for w in ouvidas)
-    return palavras, rel
+    """Tenta faster-whisper; se a fala nao bater com a copy, whisper.cpp; se ainda nao, proporcional."""
+    melhor = None
+    for motor in (cfg.get("motor") or "faster", "whispercpp"):
+        try:
+            ouvidas = ouvir(wav, cfg, motor)
+        except Exception as e:                                   # noqa: BLE001
+            print(f"   whisper ({motor}) falhou: {e}"); continue
+        palavras, rel = casar_texto(ouvidas, copy)
+        rel["ouvido"] = " ".join(w[0] for w in ouvidas); rel["motor"] = motor
+        if melhor is None or rel["razao"] > melhor[1]["razao"]: melhor = (palavras, rel)
+        if rel["razao"] >= 0.85: break
+    if melhor is None or melhor[1]["razao"] < 0.70:
+        rel = dict(melhor[1]) if melhor else {"razao": 0.0, "trocas": 0, "extras": 0, "faltas": 0, "ouvido": ""}
+        rel["motor"] = "proporcional"
+        return proporcional(copy, config.duracao(wav)), rel
+    return melhor

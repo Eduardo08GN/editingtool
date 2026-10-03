@@ -52,6 +52,36 @@ def test_perfil_de_musica():
     assert musica.perfil({"angulo": "Rodinha", "publico": "Professoras", "copy": "turma"}) == "brincar_alegre"
 
 
-if __name__ == "__main__":
+
+
+def test_ajuste_de_velocidade_nao_linear():
+    """MiniMax: dur ~ 1/speed^2.4 (medido). O ajuste tem de chegar perto do alvo sem passar do ponto."""
+    from editor import tts
+    natural = {"x": 24.22}
+    chamadas = []
+    original = tts.sintetizar
+    tts.sintetizar = lambda texto, saida, cfg, v=None: (chamadas.append(v), natural["x"] / (float(v) ** 2.4))[1]
+    try:
+        cfg = {"velocidade": 1.0, "ajustar_duracao": True, "tolerancia_s": 1.5, "velocidade_min": 0.9, "velocidade_max": 1.2}
+        r = tts.narrar("copy", 20, "x.wav", cfg)
+        assert abs(r["duracao"] - 20) <= 1.5, r
+        natural["x"] = 27.2; chamadas.clear()
+        r = tts.narrar("copy", 30, "x.wav", cfg)
+        assert abs(r["duracao"] - 30) <= 1.5 and r["velocidade"] < 1.0, r
+    finally:
+        tts.sintetizar = original
+
+
+def test_razao_em_texto_longo():
+    """Regressao: autojunk do difflib derrubava a razao em copy longa (>200 caracteres)."""
+    copy = ("Paizão, você trabalha o dia inteiro e sente que não consegue ensinar sobre Deus aos seus filhos? "
+            "A Bíblia do Bebê ajuda nisso em cinco minutinhos por noite: um card, uma passagem da Bíblia curtinha "
+            "e uma brincadeira pra fazer juntos. Garante o seu. Clique em saiba mais e confira.")
+    ouvido = copy.replace("Paizão", "Paisão").replace("cinco", "5")
+    ouvidas = [(w, i * .3, i * .3 + .25) for i, w in enumerate(ouvido.split())]
+    _, rel = alinhar.casar_texto(ouvidas, copy)
+    assert rel["razao"] > 0.9, rel
+
+if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)

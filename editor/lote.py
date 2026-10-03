@@ -60,6 +60,9 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
     os.makedirs(entregues, exist_ok=True)
     nome = f"P{cri['publico_n']}_{cri['id']}_{config.slug(cri['angulo'], 30)}_{int(round(r['duracao']))}s.mp4"
     destino = os.path.join(entregues, nome)
+    prefixo = f"P{cri['publico_n']}_{cri['id']}_"
+    for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
+        if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
     qa = {"hash": h, "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
