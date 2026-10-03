@@ -1,0 +1,61 @@
+{
+ "video": {
+  "largura": 1080,
+  "altura": 1920,
+  "fps": 30,
+  "crf": 19,
+  "preset": "medium",
+  "plano_min_s": 1.6,
+  "plano_max_s": 3.4,
+  "zooms": [1.0, 1.08, 1.0, 1.14, 1.04],
+  "ordem": "rotacionada",
+  "ultimo_plano_fixo": true,
+  "segura_final_s": 0.8,
+  "borrar_faixa": null,
+  "janela_base": null
+ },
+ "tts": {
+  "provedor": "minimax",
+  "modelo": "speech-2.6-hd",
+  "voz": "Portuguese_ChattyGirl",
+  "velocidade": 1.0,
+  "emocao": "",
+  "idioma": "Portuguese",
+  "ajustar_duracao": true,
+  "tolerancia_s": 1.5,
+  "velocidade_min": 0.9,
+  "velocidade_max": 1.2,
+  "pronuncia": []
+ },
+ "legenda": {
+  "estilo": 11,
+  "palavras_por_cartao": 3,
+  "centro_y": 0.70,
+  "esconder_no_cta": true
+ },
+ "cta": {
+  "texto": "SAIBA MAIS",
+  "gatilho": "clique",
+  "centro_y": 0.885,
+  "setas": true
+ },
+ "preco": {
+  "selo": "",
+  "gatilho": "reais",
+  "centro_y": 0.22
+ },
+ "audio": {
+  "lufs": -14,
+  "sfx": true,
+  "sfx_db": -11,
+  "sfx_espaco_min_s": 1.8,
+  "musica": "auto",
+  "musica_db": -23,
+  "musica_duck_db": -8
+ },
+ "whisper": {
+  "motor": "faster",
+  "modelo": "small",
+  "idioma": "pt"
+ }
+}

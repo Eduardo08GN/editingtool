@@ -1,0 +1,761 @@
+{
+ "_leia": "Faixas da Meta Sound Collection (uso livre em apps da Meta: FB/IG, inclusive anuncios). Arquivos em musica/biblioteca/ (fora do git). A ferramenta escolhe a faixa por perfil emocional do criativo (ver 'perfis') e evita repetir a mesma faixa dentro do mesmo publico.",
+ "fonte": "https://www.facebook.com/sound/collection/",
+ "licenca": "Meta Sound Collection — somente em produtos da Meta",
+ "perfis": {
+  "fe_emocional": {
+   "moods": {
+    "Inspirational": 3,
+    "Emotional": 2,
+    "Sentimental": 2,
+    "Uplifting": 2,
+    "Peaceful": 1,
+    "Reflective": 1
+   },
+   "instrumentos": [
+    "piano",
+    "Strings",
+    "Bells"
+   ]
+  },
+  "familia_doce": {
+   "moods": {
+    "Sweet": 3,
+    "Carefree": 2,
+    "Happy": 2,
+    "Bright": 1,
+    "Dreamy": 1,
+    "Peaceful": 1
+   },
+   "instrumentos": [
+    "acoustic guitar",
+    "Ukulele",
+    "Bells"
+   ]
+  },
+  "brincar_alegre": {
+   "moods": {
+    "Happy": 3,
+    "Bouncy": 3,
+    "Bright": 2,
+    "Fun": 2,
+    "Optimistic": 2,
+    "Quirky": 2,
+    "Carefree": 1
+   },
+   "instrumentos": [
+    "Ukulele",
+    "Strings",
+    "acoustic guitar"
+   ]
+  },
+  "legado_nostalgia": {
+   "moods": {
+    "Sentimental": 3,
+    "Nostalgic": 3,
+    "Reflective": 2,
+    "Intimate": 2,
+    "Emotional": 2,
+    "Romantic": 1
+   },
+   "instrumentos": [
+    "piano",
+    "acoustic guitar"
+   ]
+  },
+  "oferta_energia": {
+   "moods": {
+    "Uplifting": 3,
+    "Optimistic": 2,
+    "Empowering": 2,
+    "Confident": 2,
+    "Happy": 1,
+    "Celebratory": 1
+   },
+   "instrumentos": [
+    "Strings",
+    "piano"
+   ]
+  }
+ },
+ "faixas": [
+  {
+   "id": "2055735955041896",
+   "arquivo": "Fields Of Gold.m4a",
+   "titulo": "Fields Of Gold",
+   "artista": "Goldenrod",
+   "genero": "Folk",
+   "moods": [
+    "Sweet",
+    "Carefree",
+    "Uplifting",
+    "Happy"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 79.2,
+   "score_nicho": 15
+  },
+  {
+   "id": "2734448946941860",
+   "arquivo": "Made From Scratch.m4a",
+   "titulo": "Made From Scratch",
+   "artista": "Bloom",
+   "genero": "Cinematic",
+   "moods": [
+    "Emotional",
+    "Sweet",
+    "Uplifting",
+    "Optimistic"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 63.9,
+   "score_nicho": 15
+  },
+  {
+   "id": "1730565368234008",
+   "arquivo": "When The Rain Sings.m4a",
+   "titulo": "When The Rain Sings",
+   "artista": "erloom",
+   "genero": "Folk",
+   "moods": [
+    "Sentimental",
+    "Reflective",
+    "Uplifting",
+    "Inspirational"
+   ],
+   "tempo": "Medium",
+   "instrumento": "acoustic guitar",
+   "dur_s": 61.6,
+   "score_nicho": 14
+  },
+  {
+   "id": "1039303425405640",
+   "arquivo": "The Time Is Now.m4a",
+   "titulo": "The Time Is Now",
+   "artista": "Vestevent",
+   "genero": "Cinematic",
+   "moods": [
+    "Confident",
+    "Carefree",
+    "Uplifting",
+    "Inspirational"
+   ],
+   "tempo": "Medium",
+   "instrumento": "Strings",
+   "dur_s": 63.5,
+   "score_nicho": 13
+  },
+  {
+   "id": "1681984019700492",
+   "arquivo": "Feeling Good.m4a",
+   "titulo": "Feeling Good",
+   "artista": "Neon Avenue",
+   "genero": "Pop",
+   "moods": [
+    "Emotional",
+    "Sweet",
+    "Sentimental",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 61.4,
+   "score_nicho": 13
+  },
+  {
+   "id": "1368825558691650",
+   "arquivo": "Lovely Life.m4a",
+   "titulo": "Lovely Life",
+   "artista": "LAVLO",
+   "genero": "Folk",
+   "moods": [
+    "Emotional",
+    "Dreamy",
+    "Bright",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 57.3,
+   "score_nicho": 13
+  },
+  {
+   "id": "1733995387886776",
+   "arquivo": "Wings.m4a",
+   "titulo": "Wings",
+   "artista": "LAVLO",
+   "genero": "Cinematic",
+   "moods": [
+    "Emotional",
+    "Dreamy",
+    "Optimistic",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 58.4,
+   "score_nicho": 13
+  },
+  {
+   "id": "1026654053480401",
+   "arquivo": "Keep Climbing.m4a",
+   "titulo": "Keep Climbing",
+   "artista": "Auralux",
+   "genero": "Cinematic",
+   "moods": [
+    "Emotional",
+    "Sentimental",
+    "Uplifting",
+    "Dreamy"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 61.7,
+   "score_nicho": 13
+  },
+  {
+   "id": "1038040022204091",
+   "arquivo": "Gentle Keepsake.m4a",
+   "titulo": "Gentle Keepsake",
+   "artista": "Neon Avenue",
+   "genero": "Ambient",
+   "moods": [
+    "Emotional",
+    "Sweet",
+    "Sentimental",
+    "Dreamy"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Bells",
+   "dur_s": 61.4,
+   "score_nicho": 13
+  },
+  {
+   "id": "2524552044684612",
+   "arquivo": "Acoustic Whispers.m4a",
+   "titulo": "Acoustic Whispers",
+   "artista": "Jesse Fury",
+   "genero": "Folk",
+   "moods": [
+    "Sweet",
+    "Carefree",
+    "Chill",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 67.9,
+   "score_nicho": 12
+  },
+  {
+   "id": "1579578520236379",
+   "arquivo": "Baby Steps.m4a",
+   "titulo": "Baby Steps",
+   "artista": "Jim Hustwit",
+   "genero": "Classical",
+   "moods": [
+    "Uplifting",
+    "Dreamy",
+    "Inspirational",
+    "Romantic"
+   ],
+   "tempo": "Medium",
+   "instrumento": "Strings",
+   "dur_s": 63.3,
+   "score_nicho": 12
+  },
+  {
+   "id": "1639048421127538",
+   "arquivo": "Lumo.m4a",
+   "titulo": "Lumo",
+   "artista": "Atlas Mars",
+   "genero": "Classical",
+   "moods": [
+    "Carefree",
+    "Uplifting",
+    "Quirky",
+    "Happy"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Strings",
+   "dur_s": 67.1,
+   "score_nicho": 12
+  },
+  {
+   "id": "1767290431126141",
+   "arquivo": "Remember That.m4a",
+   "titulo": "Remember That",
+   "artista": "Mark Rudin",
+   "genero": "Pop",
+   "moods": [
+    "Emotional",
+    "Sweet",
+    "Carefree",
+    "Bright"
+   ],
+   "tempo": "Medium",
+   "instrumento": "acoustic guitar",
+   "dur_s": 64.3,
+   "score_nicho": 12
+  },
+  {
+   "id": "1000513156346444",
+   "arquivo": "A Bit Of Fun.m4a",
+   "titulo": "A Bit Of Fun",
+   "artista": "Jim Hustwit",
+   "genero": "Folk",
+   "moods": [
+    "Bouncy",
+    "Happy",
+    "Optimistic",
+    "Bright"
+   ],
+   "tempo": "Medium",
+   "instrumento": "Ukulele",
+   "dur_s": 66.0,
+   "score_nicho": 12
+  },
+  {
+   "id": "1068151122243987",
+   "arquivo": "Carried By The Day.m4a",
+   "titulo": "Carried By The Day",
+   "artista": "Fellow Travelers",
+   "genero": "Classical",
+   "moods": [
+    "Uplifting",
+    "Celebratory",
+    "Empowering",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Strings",
+   "dur_s": 62.9,
+   "score_nicho": 11
+  },
+  {
+   "id": "958972549936407",
+   "arquivo": "Goodbye California.m4a",
+   "titulo": "Goodbye California",
+   "artista": "erloom",
+   "genero": "Folk",
+   "moods": [
+    "Sentimental",
+    "Reflective",
+    "Uplifting",
+    "Inspirational"
+   ],
+   "tempo": "Medium",
+   "instrumento": "Banjo",
+   "dur_s": 73.8,
+   "score_nicho": 11
+  },
+  {
+   "id": "27848170894843876",
+   "arquivo": "Time Moves Gently.m4a",
+   "titulo": "Time Moves Gently",
+   "artista": "Afterlight",
+   "genero": "Pop",
+   "moods": [
+    "Emotional",
+    "Sentimental",
+    "Dreamy",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 63.4,
+   "score_nicho": 11
+  },
+  {
+   "id": "984456724611827",
+   "arquivo": "Hope Begins.m4a",
+   "titulo": "Hope Begins",
+   "artista": "Neon Avenue",
+   "genero": "Atmospheric",
+   "moods": [
+    "Emotional",
+    "Uplifting",
+    "Empowering",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 64.3,
+   "score_nicho": 11
+  },
+  {
+   "id": "1754976638973304",
+   "arquivo": "Forward Echo.m4a",
+   "titulo": "Forward Echo",
+   "artista": "Auralux",
+   "genero": "Pop",
+   "moods": [
+    "Sweet",
+    "Sentimental",
+    "Uplifting",
+    "Romantic"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 64.8,
+   "score_nicho": 11
+  },
+  {
+   "id": "1077700481594543",
+   "arquivo": "Journey.m4a",
+   "titulo": "Journey",
+   "artista": "LAVLO",
+   "genero": "Folk",
+   "moods": [
+    "Sweet",
+    "Dreamy",
+    "Chill",
+    "Bright"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 73.0,
+   "score_nicho": 11
+  },
+  {
+   "id": "2003889336998228",
+   "arquivo": "Serenity.m4a",
+   "titulo": "Serenity",
+   "artista": "Jesse Robitaille",
+   "genero": "Folk",
+   "moods": [
+    "Emotional",
+    "Relaxing",
+    "Carefree",
+    "Dreamy"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 72.1,
+   "score_nicho": 11
+  },
+  {
+   "id": "2109617139987223",
+   "arquivo": "Pizzicato Peaches.m4a",
+   "titulo": "Pizzicato Peaches",
+   "artista": "Afterlight",
+   "genero": "Cinematic",
+   "moods": [
+    "Uplifting",
+    "Happy",
+    "Empowering",
+    "Optimistic"
+   ],
+   "tempo": "Fast",
+   "instrumento": "Strings",
+   "dur_s": 64.8,
+   "score_nicho": 11
+  },
+  {
+   "id": "1238353781750361",
+   "arquivo": "A Good Morning.m4a",
+   "titulo": "A Good Morning",
+   "artista": "cloud cover",
+   "genero": "Cinematic",
+   "moods": [
+    "Carefree",
+    "Celebratory",
+    "Happy",
+    "Bright"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Strings",
+   "dur_s": 59.7,
+   "score_nicho": 11
+  },
+  {
+   "id": "2528086260937464",
+   "arquivo": "You're The Memory.m4a",
+   "titulo": "You're The Memory",
+   "artista": "Neon Avenue",
+   "genero": "Folk",
+   "moods": [
+    "Emotional",
+    "Reflective",
+    "Intimate",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 64.8,
+   "score_nicho": 10
+  },
+  {
+   "id": "27512759741758294",
+   "arquivo": "Content Connection.m4a",
+   "titulo": "Content Connection",
+   "artista": "Afterlight",
+   "genero": "Pop",
+   "moods": [
+    "Relaxing",
+    "Optimistic",
+    "Bright",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 62.4,
+   "score_nicho": 10
+  },
+  {
+   "id": "1826712281632561",
+   "arquivo": "Stone And Sky.m4a",
+   "titulo": "Stone And Sky",
+   "artista": "Magnetic Sirens",
+   "genero": "Folk",
+   "moods": [
+    "Emotional",
+    "Reflective",
+    "Intimate",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 61.9,
+   "score_nicho": 10
+  },
+  {
+   "id": "974630465595990",
+   "arquivo": "Day's End.m4a",
+   "titulo": "Day's End",
+   "artista": "Fellow Travelers",
+   "genero": "Cinematic",
+   "moods": [
+    "Emotional",
+    "Reflective",
+    "Moody",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 64.6,
+   "score_nicho": 10
+  },
+  {
+   "id": "892770236885334",
+   "arquivo": "Dreaming.m4a",
+   "titulo": "Dreaming",
+   "artista": "LAVLO",
+   "genero": "Folk",
+   "moods": [
+    "Relaxing",
+    "Sweet",
+    "Dreamy",
+    "Chill"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 78.0,
+   "score_nicho": 10
+  },
+  {
+   "id": "2313797282699839",
+   "arquivo": "Glow Guitar.m4a",
+   "titulo": "Glow Guitar",
+   "artista": "Auralux",
+   "genero": "Folk",
+   "moods": [
+    "Sweet",
+    "Nostalgic",
+    "Intimate",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 60.6,
+   "score_nicho": 10
+  },
+  {
+   "id": "1016824851405131",
+   "arquivo": "Keep It Easy.m4a",
+   "titulo": "Keep It Easy",
+   "artista": "Neon Avenue",
+   "genero": "Hawaiian",
+   "moods": [
+    "Bouncy",
+    "Carefree",
+    "Happy",
+    "Bright"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Ukulele",
+   "dur_s": 61.3,
+   "score_nicho": 10
+  },
+  {
+   "id": "1589527069228130",
+   "arquivo": "Awakening Nature.m4a",
+   "titulo": "Awakening Nature",
+   "artista": "Inod",
+   "genero": "Atmospheric",
+   "moods": [
+    "Soulful",
+    "Dreamy",
+    "Inspirational",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 60.8,
+   "score_nicho": 9
+  },
+  {
+   "id": "1608039604333494",
+   "arquivo": "Dewdrops.m4a",
+   "titulo": "Dewdrops",
+   "artista": "Jesse Robitaille",
+   "genero": "Folk",
+   "moods": [
+    "Chill",
+    "Bright",
+    "Peaceful",
+    "Upbeat"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 68.9,
+   "score_nicho": 9
+  },
+  {
+   "id": "999545459745662",
+   "arquivo": "Friendly Forest.m4a",
+   "titulo": "Friendly Forest",
+   "artista": "Fellow Travelers",
+   "genero": "Atmospheric",
+   "moods": [
+    "Emotional",
+    "Reflective",
+    "Dreamy",
+    "Peaceful"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 67.6,
+   "score_nicho": 9
+  },
+  {
+   "id": "1044724155217351",
+   "arquivo": "Fall.m4a",
+   "titulo": "Fall",
+   "artista": "Jesse Robitaille",
+   "genero": "Folk",
+   "moods": [
+    "Chill",
+    "Bright",
+    "Peaceful",
+    "Upbeat"
+   ],
+   "tempo": "Slow",
+   "instrumento": "acoustic guitar",
+   "dur_s": 65.2,
+   "score_nicho": 9
+  },
+  {
+   "id": "2770679563328368",
+   "arquivo": "Grocery Dash.m4a",
+   "titulo": "Grocery Dash",
+   "artista": "Lightbox Music",
+   "genero": "Classical",
+   "moods": [
+    "Dreamy",
+    "Chill",
+    "Dramatic",
+    "Inspirational"
+   ],
+   "tempo": "Medium",
+   "instrumento": "Strings",
+   "dur_s": 62.9,
+   "score_nicho": 9
+  },
+  {
+   "id": "1069268998973499",
+   "arquivo": "Easy Does It Day.m4a",
+   "titulo": "Easy Does It Day",
+   "artista": "Afterlight",
+   "genero": "Pop",
+   "moods": [
+    "Emotional",
+    "Uplifting",
+    "Dreamy",
+    "Inspirational"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Programming",
+   "dur_s": 64.0,
+   "score_nicho": 9
+  },
+  {
+   "id": "2263439694405407",
+   "arquivo": "Golden Ascent.m4a",
+   "titulo": "Golden Ascent",
+   "artista": "Afterlight",
+   "genero": "Pop",
+   "moods": [
+    "Uplifting",
+    "Empowering",
+    "Dramatic",
+    "Inspirational"
+   ],
+   "tempo": "Medium",
+   "instrumento": "piano",
+   "dur_s": 65.2,
+   "score_nicho": 9
+  },
+  {
+   "id": "1320550219959358",
+   "arquivo": "September Sad.m4a",
+   "titulo": "September Sad",
+   "artista": "Fellow Travelers",
+   "genero": "Folk",
+   "moods": [
+    "Emotional",
+    "Sentimental",
+    "Romantic"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 133.3,
+   "score_nicho": 9
+  },
+  {
+   "id": "1730168504971883",
+   "arquivo": "The Space Between.m4a",
+   "titulo": "The Space Between",
+   "artista": "Magnetic Sirens",
+   "genero": "Cinematic",
+   "moods": [
+    "Emotional",
+    "Sentimental",
+    "Dramatic"
+   ],
+   "tempo": "Slow",
+   "instrumento": "piano",
+   "dur_s": 62.4,
+   "score_nicho": 9
+  },
+  {
+   "id": "2176891192870820",
+   "arquivo": "Postcards From Nothing.m4a",
+   "titulo": "Postcards From Nothing",
+   "artista": "cloud cover",
+   "genero": "Ambient",
+   "moods": [
+    "Carefree",
+    "Dreamy",
+    "Happy",
+    "Bright"
+   ],
+   "tempo": "Slow",
+   "instrumento": "Synths",
+   "dur_s": 68.4,
+   "score_nicho": 9
+  }
+ ]
+}

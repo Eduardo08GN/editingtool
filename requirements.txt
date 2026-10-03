@@ -1,0 +1,8 @@
+# nucleo
+faster-whisper>=1.1
+Pillow>=10
+numpy
+# opcionais
+# gdown            -> python edt.py sfx sync (baixa o pool de SFX do Drive)
+# kokoro soundfile -> TTS local gratis para teste (--tts kokoro)
+# torch speechbrain librosa -> ferramentas/voz_parecida.py

@@ -1,0 +1,57 @@
+# -*- coding: utf-8 -*-
+"""Testes sem rede e sem ffmpeg:  python -m pytest tests  (ou: python tests/test_basico.py)"""
+import os, sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from editor import alinhar, campanha, legendas, montagem, musica, sfx
+
+TXT = """Público 1 - Religioso (copys escolhidas)
+
+1.1 Padre (20 s, sem preço)
+Padre, quantas famílias saem da missa sem saber ensinar a fé aos filhos pequenos? Garanta o seu. Clique em saiba mais e confira.
+
+1.2 Pastor (31 s, com preço)
+Pastor, custa só dez reais.
+Clique em saiba mais e confira.
+"""
+
+
+def test_importa_formato_do_time():
+    c = campanha.importar_texto(TXT)
+    assert [x["id"] for x in c["criativos"]] == ["1.1", "1.2"]
+    assert c["criativos"][1]["preco"] and c["criativos"][1]["alvo_s"] == 31
+    assert c["criativos"][1]["copy"].endswith("Clique em saiba mais e confira.")
+    assert any("publico 1" in a for a in campanha.validar(c))       # so 2 criativos: avisa
+
+
+def test_casar_texto_usa_grafia_da_copy():
+    ouvidas = [("A", 0, .2), ("Bíblia", .2, .5), ("tem", .5, .7), ("70", .7, 1.0), ("cards", 1.0, 1.3)]
+    pal, rel = alinhar.casar_texto(ouvidas, "A Bíblia tem setenta cards")
+    assert [p[0] for p in pal] == ["A", "Bíblia", "tem", "setenta", "cards"]
+
+
+def test_cartoes_equilibrados_sem_palavra_sozinha():
+    ws = "você que conduz o batismo ou a apresentação de bebês ouve esse compromisso o tempo todo:".split()
+    pal = [(w, i * .3, i * .3 + .25) for i, w in enumerate(ws)]
+    tam = [len(c["palavras"]) for c in montagem.cartoes(pal, 3)]
+    assert sum(tam) == len(ws) and min(tam) >= 2 and max(tam) <= 3
+
+
+def test_preco_vira_selo():
+    pal = [("custa", 0, .3), ("só", .3, .5), ("dez", .5, .7), ("reais.", .7, 1.0)]
+    assert montagem.momento_preco(pal, {"gatilho": "reais"})[1] == "SÓ R$ 10"
+
+
+def test_cta_e_destaque():
+    pal = [("Garanta", 0, .3), ("o", .3, .4), ("seu.", .4, .6), ("Clique", .7, 1), ("em", 1, 1.1)]
+    assert sfx.indice_cta(pal) == 3
+    assert legendas.papel(["A", "B", "C"], 1, None, legendas.estilo(11)) == ["base", "realce", "base"]
+
+
+def test_perfil_de_musica():
+    assert musica.perfil({"angulo": "Padre", "publico": "Religioso", "copy": ""}) == "fe_emocional"
+    assert musica.perfil({"angulo": "Rodinha", "publico": "Professoras", "copy": "turma"}) == "brincar_alegre"
+
+
+if __name__ == "__main__":
+    for n, f in list(globals().items()):
+        if n.startswith("test_"): f(); print("OK", n)

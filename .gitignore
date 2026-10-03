@@ -1,0 +1,13 @@
+.env
+.cache/
+__pycache__/
+*.pyc
+sfx/pool/
+musica/biblioteca/
+campanhas/*/saida/
+campanhas/*/base/
+*.mp4
+*.wav
+*.mp3
+*.m4a
+!docs/**/*.png

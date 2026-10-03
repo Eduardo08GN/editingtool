@@ -1,0 +1,233 @@
+{
+ "produto": "Bíblia do Bebê: 70 Cards Lúdicos",
+ "criativos": [
+  {
+   "id": "1.1",
+   "publico_n": 1,
+   "publico": "Religioso",
+   "angulo": "Padre",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Padre, quantas famílias saem da missa sem saber ensinar a fé aos filhos pequenos? A Bíblia do Bebê resolve isso: setenta cards ilustrados, cada um com uma história da Bíblia e uma brincadeira simples. Garanta o seu e use com as crianças da sua paróquia. Clique em saiba mais e confira."
+  },
+  {
+   "id": "1.2",
+   "publico_n": 1,
+   "publico": "Religioso",
+   "angulo": "Pastor",
+   "alvo_s": 31,
+   "preco": true,
+   "copy": "Pastor, os pais da sua igreja querem ensinar a Bíblia aos filhos. Só falta o material. Muito pai e mãe trava na hora de contar uma história bíblica para um bebê de dois anos. A Bíblia do Bebê resolve isso. São setenta cards: o desenho na frente, a história curtinha e a brincadeira no verso. É abrir, ler e brincar junto. Custa só dez reais. Garanta o seu para a sua igreja. Clique em saiba mais e confira."
+  },
+  {
+   "id": "1.3",
+   "publico_n": 1,
+   "publico": "Religioso",
+   "angulo": "Líder de célula",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Líder de célula, tem criança pequena no seu grupo? Leve A Bíblia do Bebê para a próxima reunião. São setenta cards com histórias da Bíblia e brincadeiras para crianças de zero a quatro anos. Enquanto os adultos estudam a palavra, os pequenos também aprendem. Clique em saiba mais e confira."
+  },
+  {
+   "id": "1.4",
+   "publico_n": 1,
+   "publico": "Religioso",
+   "angulo": "Ministério infantil",
+   "alvo_s": 26,
+   "preco": true,
+   "copy": "Você é do ministério infantil e sabe o desafio: como ensinar a Bíblia para quem ainda nem fala direito? A Bíblia do Bebê tem setenta cards. Na frente, um desenho colorido. No verso, a história em poucas linhas e uma brincadeira para a turma, como imitar os bichos da Arca de Noé ou levantar os bracinhos como Moisés. Tudo por apenas dez reais. Clique em saiba mais e confira."
+  },
+  {
+   "id": "1.5",
+   "publico_n": 1,
+   "publico": "Religioso",
+   "angulo": "Equipe de batismo",
+   "alvo_s": 40,
+   "preco": false,
+   "copy": "Você que conduz o batismo ou a apresentação de bebês ouve esse compromisso o tempo todo: No batismo, pais e padrinhos prometem criar a criança na fé. Mas como cumprir essa promessa em casa, com um bebê que ainda nem fala? Agora você pode dar a resposta na prática. A Bíblia do Bebê tem setenta cards com as histórias mais queridas da Bíblia, cada um com uma brincadeira para pais e filhos. Leve para o seu encontro e mostre como é simples começar. Os pais saem sabendo o que fazer em casa. Garanta o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "2.1",
+   "publico_n": 2,
+   "publico": "Mães e avós",
+   "angulo": "Mãe, antes de dormir",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Mãe, me fala: quando foi a última vez que você falou de Deus com o seu filho? Que tal hoje, com Noé? A Bíblia do Bebê tem setenta cards, cada um com uma passagem da Bíblia curtinha e uma brincadeira. Garanta já. Clique em saiba mais e confira."
+  },
+  {
+   "id": "2.2",
+   "publico_n": 2,
+   "publico": "Mães e avós",
+   "angulo": "Mãe, menos tela",
+   "alvo_s": 30,
+   "preco": true,
+   "copy": "Mãe, seu filho vive pedindo o celular? Olha, troca cinco minutinhos de tela por cinco minutinhos de Bíblia no seu colo. A Bíblia do Bebê tem setenta cards coloridos. Na frente, um desenho que prende o olhinho. Atrás, uma passagem da Bíblia curtinha e uma brincadeira: imitar o leão, contar as estrelas, fazer chuva com os dedinhos. E o melhor: custa só dez reais. Você imprime hoje mesmo. Clique em saiba mais e confira."
+  },
+  {
+   "id": "2.3",
+   "publico_n": 2,
+   "publico": "Mães e avós",
+   "angulo": "Mãe, ensinar a fé desde cedo",
+   "alvo_s": 40,
+   "preco": false,
+   "copy": "Mãe, você quer que o seu filho cresça conhecendo Deus, mas não faz ideia de por onde começar com uma criança tão pequena? Calma, é mais simples do que parece. A Bíblia do Bebê tem setenta cards com as passagens mais conhecidas da Bíblia: a Criação, a Arca de Noé, Davi e Golias, o nascimento de Jesus. Na frente, um desenho colorido. Atrás, uma passagem da Bíblia curtinha e uma brincadeira pra fazer junto. Você imprime em casa, recorta e plastifica. Cinco minutinhos por dia, e a fé vira parte da rotina de vocês. Clique em saiba mais e confira."
+  },
+  {
+   "id": "2.4",
+   "publico_n": 2,
+   "publico": "Mães e avós",
+   "angulo": "Avó, legado",
+   "alvo_s": 29,
+   "preco": false,
+   "copy": "Vó, você quer deixar uma coisa que fique pra sempre na vida dos seus netos? Deixa a fé. A Bíblia do Bebê tem setenta cards ilustrados com passagens da Bíblia em palavras que criança pequena entende, e uma brincadeira em cada um. De Noé ao menino Jesus, tudo no colo da vó. Na próxima visita, é só pegar um card, ler e brincar juntinho. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "2.5",
+   "publico_n": 2,
+   "publico": "Mães e avós",
+   "angulo": "Avó, presente pro neto",
+   "alvo_s": 20,
+   "preco": true,
+   "copy": "Vó, presente pro neto não precisa ser caro pra ser especial. Com só dez reais, você tem setenta cards com passagens da Bíblia e brincadeiras pra fazer juntos. É só imprimir, plastificar e chamar o netinho pro seu colo. Simples assim. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "3.1",
+   "publico_n": 3,
+   "publico": "Professoras e professores de pré-escola",
+   "angulo": "Rodinha",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Professora, sabe aquele momento da rodinha em que a turma dispersa? Puxa um card da Bíblia do Bebê. Na frente, um desenho colorido. Atrás, uma passagem da Bíblia curtinha e uma brincadeira. Em cinco minutinhos, a turma toda participando de novo. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "3.2",
+   "publico_n": 3,
+   "publico": "Professoras e professores de pré-escola",
+   "angulo": "Aprender brincando",
+   "alvo_s": 30,
+   "preco": false,
+   "copy": "Professora, você sabe que criança pequena aprende brincando, né? Cada card da Bíblia do Bebê junta uma passagem da Bíblia curtinha com uma brincadeira que mexe com tudo: tem de contar nos dedinhos, de imitar som de bicho, de pular e de levantar os bracinhos. São setenta cards pra crianças de zero a quatro anos. É fé e brincadeira juntas, do jeito que criança aprende. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "3.3",
+   "publico_n": 3,
+   "publico": "Professoras e professores de pré-escola",
+   "angulo": "Escola cristã",
+   "alvo_s": 40,
+   "preco": true,
+   "copy": "Professora, você trabalha numa escola cristã e quer que os pequenos cresçam conhecendo Deus? Então você precisa conhecer A Bíblia do Bebê. São setenta cards feitos pra crianças de zero a quatro anos. A criança olha o desenho, você lê a passagem da Bíblia curtinha que está atrás e a turma faz a brincadeira junto. Tem Noé, tem Davi e Golias, tem Jonas, tem o nascimento de Jesus. É material pronto pro ano todo, por só dez reais. Cada card leva cinco minutinhos, perfeito pra rodinha. Imprime, recorta, plastifica e pronto. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "3.4",
+   "publico_n": 3,
+   "publico": "Professoras e professores de pré-escola",
+   "angulo": "Fala, número e movimento",
+   "alvo_s": 30,
+   "preco": false,
+   "copy": "Prô, que tal uma atividade que trabalha fala, número e movimento, e ainda ensina sobre Deus? A Bíblia do Bebê tem setenta cards, pra crianças de zero a quatro anos. Na frente, o desenho. Atrás, uma passagem da Bíblia curtinha e uma brincadeira: fazer o som da rãzinha, contar as estrelas de Abraão, dar voltas na sala como em Jericó. A turma participa, se mexe e aprende. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "3.5",
+   "publico_n": 3,
+   "publico": "Professoras e professores de pré-escola",
+   "angulo": "Material barato",
+   "alvo_s": 20,
+   "preco": true,
+   "copy": "Professora, tá cansada de tirar dinheiro do próprio bolso pra comprar material? Por dez reais, A Bíblia do Bebê te dá setenta cards com passagens da Bíblia e brincadeiras pra turma. É só imprimir, plastificar e usar quantas vezes quiser. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "4.1",
+   "publico_n": 4,
+   "publico": "Madrinhas e padrinhos",
+   "angulo": "Convite para ser madrinha",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Você acabou de ser convidada pra ser madrinha? Que alegria! Agora vem o mais bonito: ajudar o seu afilhado a conhecer Deus. A Bíblia do Bebê tem setenta cards, cada um com uma passagem da Bíblia curtinha e uma brincadeira. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "4.2",
+   "publico_n": 4,
+   "publico": "Madrinhas e padrinhos",
+   "angulo": "Dinda lembrada a vida toda",
+   "alvo_s": 40,
+   "preco": false,
+   "copy": "Dinda, você quer ser aquela madrinha que o afilhado lembra com carinho a vida toda? Então começa agora, enquanto ele ainda é pequenininho. A Bíblia do Bebê foi feita pra crianças de zero a quatro anos. São setenta cards: ele olha o desenho, você lê uma passagem da Bíblia curtinha e vocês fazem a brincadeira juntos. Bater palminha, imitar os bichos da Arca, contar as estrelas de Abraão. Você imprime, plastifica e leva na próxima visita. Pode ser o primeiro contato dele com a Bíblia, e vai ser com você. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "4.3",
+   "publico_n": 4,
+   "publico": "Madrinhas e padrinhos",
+   "angulo": "Padrinho perto na fé",
+   "alvo_s": 30,
+   "preco": false,
+   "copy": "Padrinho, ser padrinho não é só segurar o bebê no dia do batismo, né? É estar perto na fé. A Bíblia do Bebê te ajuda nisso. São setenta cards com passagens da Bíblia curtinhas e uma brincadeira em cada um, pra fazer com o afilhado. Davi e Golias, Jonas, a Arca de Noé. Cinco minutinhos em cada visita, e você vira o padrinho que ensinou a Bíblia. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "4.4",
+   "publico_n": 4,
+   "publico": "Madrinhas e padrinhos",
+   "angulo": "Presente de batizado",
+   "alvo_s": 30,
+   "preco": true,
+   "copy": "Madrinha, presente de batizado não precisa ser mais uma roupinha que não serve no mês que vem. Que tal dar a primeira Bíblia do seu afilhado? A Bíblia do Bebê tem setenta cards com passagens da Bíblia curtinhas e brincadeiras. Você imprime, plastifica, coloca numa caixinha com laço e pronto: um presente lindo, que acompanha ele até os quatro anos. E custa só dez reais. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "4.5",
+   "publico_n": 4,
+   "publico": "Madrinhas e padrinhos",
+   "angulo": "Aniversário do afilhado",
+   "alvo_s": 20,
+   "preco": true,
+   "copy": "Madrinha, aniversário do afilhado chegando e você sem ideia de presente? Por dez reais, você monta um presente lindo: setenta cards com passagens da Bíblia e brincadeiras pra fazer com ele. É só imprimir, plastificar e colocar numa caixinha com laço. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "5.1",
+   "publico_n": 5,
+   "publico": "Pais",
+   "angulo": "Pai que trabalha o dia inteiro",
+   "alvo_s": 20,
+   "preco": false,
+   "copy": "Paizão, você trabalha o dia inteiro e sente que não consegue ensinar sobre Deus aos seus filhos? A Bíblia do Bebê ajuda nisso em cinco minutinhos por noite: um card, uma passagem da Bíblia curtinha e uma brincadeira pra fazer juntos. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "5.2",
+   "publico_n": 5,
+   "publico": "Pais",
+   "angulo": "O maior presente é a fé",
+   "alvo_s": 39,
+   "preco": true,
+   "copy": "Pai, sabe qual é o maior presente que você pode deixar pro seu filho? A fé. E ela começa com você, dentro de casa, desde pequenininho. A Bíblia do Bebê foi feita pra crianças de zero a quatro anos. São setenta cards: o seu filho olha o desenho, você lê uma passagem da Bíblia curtinha e vocês brincam juntos. Mostrar o muque como Sansão, levantar ele bem alto como Zaqueu, balançar como o barquinho de Jesus. Você imprime, plastifica e começa hoje à noite. E custa só dez reais. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "5.3",
+   "publico_n": 5,
+   "publico": "Pais",
+   "angulo": "Pai de menina",
+   "alvo_s": 31,
+   "preco": false,
+   "copy": "Pai de menina, você sabe: ela vai lembrar pra sempre de quem segurava ela no colo e falava de Deus. Que seja você. A Bíblia do Bebê tem setenta cards, cada um com um desenho colorido, uma passagem da Bíblia curtinha e uma brincadeira pra fazer junto. Dar a mão, dar um abraço apertado, rir junto. Na hora de dormir, é só pegar um card e ler pra ela. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "5.4",
+   "publico_n": 5,
+   "publico": "Pais",
+   "angulo": "Cinco minutinhos por dez reais",
+   "alvo_s": 20,
+   "preco": true,
+   "copy": "Pai, com dez reais você tem cinco minutinhos especiais com o seu filho todo santo dia. A Bíblia do Bebê tem setenta cards com passagens da Bíblia e brincadeiras pra crianças de zero a quatro anos. É só imprimir e plastificar. Garante o seu. Clique em saiba mais e confira."
+  },
+  {
+   "id": "5.5",
+   "publico_n": 5,
+   "publico": "Pais",
+   "angulo": "Do que o filho vai lembrar",
+   "alvo_s": 30,
+   "preco": false,
+   "copy": "Pai, daqui a alguns anos, do que você quer que o seu filho lembre? Do pai no celular? Ou do pai sentado no chão falando de Noé e imitando os bichos da Arca? A Bíblia do Bebê tem setenta cards com passagens da Bíblia curtinhas e brincadeiras pra fazer junto. Você imprime, plastifica e deixa do lado da cama. São cinco minutinhos que ficam pra sempre. Garante o seu. Clique em saiba mais e confira."
+  }
+ ],
+ "ajustes": {},
+ "nome": "biblia-do-bebe",
+ "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\base_teste_criativo_exemplo.mp4"
+}
