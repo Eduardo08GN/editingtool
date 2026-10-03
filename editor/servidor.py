@@ -261,6 +261,8 @@ def criar_app(token, hosts):
         novo = await request.json()
         p = os.path.join(_camp.pasta(nome), "campanha.json")
         c = config.ler_json(p); aj = c.setdefault("ajustes", {})
+        if isinstance(novo.get("publicar"), dict):          # destino no GitHub mora fora de "ajustes"
+            c.setdefault("publicar", {}).update(novo.pop("publicar"))
         for k, v in novo.items():
             if isinstance(v, dict): aj.setdefault(k, {}).update(v)
             elif v is None: aj.pop(k, None)

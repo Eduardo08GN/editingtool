@@ -23,10 +23,12 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const temCartoon = !!ef?.transicoes?.pesos && Object.keys(ef.transicoes.pesos).some((k) => k === "iris");
   const [estilo, setEstilo] = useState<"cartoon" | "padrao">(temCartoon ? "cartoon" : "padrao");
   const [prop, setProp] = useState(ef?.transicoes?.proporcao ?? 0.6);
+  const [autoPub, setAutoPub] = useState(camp?.publicar?.auto !== false);
   useEffect(() => {
     if (!ef) return;
     setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
     setEstilo(ef.transicoes?.pesos && "iris" in ef.transicoes.pesos ? "cartoon" : "padrao"); setProp(ef.transicoes?.proporcao ?? 0.6);
+    setAutoPub(camp?.publicar?.auto !== false);
   }, [camp?.nome]);   // eslint-disable-line react-hooks/exhaustive-deps
   if (!camp) return <div className="tela"><div className="panel vazio"><h2>Abra uma campanha para ajustar</h2></div></div>;
 
@@ -36,6 +38,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
       modelo,
       audio: { musica: musica ? "auto" : "", sfx },
       transicoes: { proporcao: Number(prop), pesos: estilo === "cartoon" ? PESOS_CARTOON : {} },
+      ...(camp.publicar?.repo ? { publicar: { auto: autoPub } } : {}),
     });
     ctx.recarregar();
   }, "Ajustes salvos. Valem para os próximos criativos produzidos (use Refazer para aplicar nos prontos).");
@@ -84,6 +87,11 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
         <h3>Áudio</h3>
         <div className="switch-linha"><div><strong>Música automática</strong><p className="meta">A ferramenta lê o ângulo e escolhe a faixa da Meta Sound Collection.</p></div>
           <Interruptor ligado={musica} mudar={setMusica} rotulo="Música automática" /></div>
+        {camp.publicar?.repo && (
+          <div className="switch-linha"><div><strong>Enviar para o GitHub ao terminar</strong>
+            <p className="meta">{camp.publicar.repo.replace("https://github.com/", "")} → {camp.publicar.pasta}</p></div>
+            <Interruptor ligado={autoPub} mudar={setAutoPub} rotulo="Enviar para o GitHub ao terminar" /></div>
+        )}
         <div className="switch-linha"><div><strong>Efeitos sonoros</strong><p className="meta">Nas transições, no preço e no CTA, só do pool liberado.</p></div>
           <Interruptor ligado={sfx} mudar={setSfx} rotulo="Efeitos sonoros" /></div>
       </section>

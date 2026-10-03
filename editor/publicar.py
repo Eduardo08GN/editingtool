@@ -58,6 +58,9 @@ def publicar(nome, repo=None, pasta=None, log=print):
         os.makedirs(os.path.dirname(clone), exist_ok=True)
         log(f"publicar: clonando {url} (so' a pasta de destino)")
         _git(["clone", "--filter=blob:none", "--sparse", url, clone], cwd=os.path.dirname(clone))
+    # ⛔ 2026-10-03: o caminho de "2.3 - Mãe, ensinar a fé desde cedo/..." passou de 260 caracteres e o git
+    #    do Windows recusou o arquivo ("Filename too long"). Caminho longo liga no clone da ferramenta.
+    _git(["config", "core.longpaths", "true"], cwd=clone)
     _git(["sparse-checkout", "set", "--no-cone", f"/{alvo_rel}/"], cwd=clone)
     ramo = _git(["rev-parse", "--abbrev-ref", "HEAD"], cwd=clone)
     _git(["pull", "--ff-only", "origin", ramo], cwd=clone)

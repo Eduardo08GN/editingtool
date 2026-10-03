@@ -127,6 +127,15 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
              for d in sorted(os.listdir(os.path.join(camp["_pasta"], "saida"))) if not d.startswith("_")]
     todos = [t for t in todos if t]
     html = player.gerar(camp, todos)
+    # ⭐ PUBLICAR AUTOMATICO (pedido do operador, 2026-10-03): campanha com destino no GitHub manda os
+    #    entregues para o repo do time assim que o lote termina. "auto": false no campanha.json desliga.
+    pub = (config.ler_json(os.path.join(camp["_pasta"], "campanha.json")) or {}).get("publicar") or {}
+    if res and pub.get("repo") and pub.get("pasta") and pub.get("auto", True) and not (parar is not None and parar.is_set()):
+        try:
+            from . import publicar as _pub
+            _pub.publicar(nome_camp, log=log)
+        except BaseException as e:                              # noqa: BLE001 — publicar nunca derruba o lote
+            log(f"⚠ publicar no GitHub falhou (os videos estao salvos; tente 'Enviar para o GitHub'): {e}")
     config.escrever_json(os.path.join(camp["_pasta"], "saida", "relatorio.json"),
                          {"campanha": camp.get("nome"), "feitos": len(res), "erros": erros, "criativos": todos})
     return {"feitos": len(res), "erros": erros, "player": html}
