@@ -25,6 +25,20 @@ A pessoa não é técnica: quem roda comando é você.
    e diga onde estão os MP4: `campanhas/<nome>/saida/_entregues/`.
    Se algum criativo tiver aviso (fala divergente, CTA não ouvido, duração fora), mostre-o.
 
+## A interface (o jeito normal de operar)
+
+Dois cliques em **`EditingTool.cmd`** (ou `python edt.py painel`) abre a janela:
+**Painel** (produzir/parar, progresso, atividade, criativos por publico) · **Criativos** (filtros,
+player, refazer um so') · **Nova campanha** (colar o mapa de angulos, escolher a pasta de clipes) ·
+**Ajustes** da campanha (voz, modelo 1/2/alternar, estilo de transicao, musica, SFX).
+Codigo: `editor/servidor.py` (FastAPI, so' 127.0.0.1, senha por sessao) + `painel/` (React/Vite;
+`npm run build` gera `painel/dist`, que vai no git para ninguem precisar de Node).
+
+## Onde ficam os videos
+
+`campanhas/<nome>/saida/_entregues/P<n>-<publico>/<id>-<angulo>/P<n>_<id>_<angulo>_<dur>s.mp4`
+— uma pasta por angulo; variacoes futuras do mesmo angulo caem nela.
+
 ## Comandos
 
 | para quê | comando |

@@ -1,0 +1,66 @@
+/* EditingTool — tokens do design system (herdados do AutomaWeb Studio / Organic Wave, mesmo dono) */
+
+:root {
+  /* superfícies */
+  --ow-bg-deep: #030807;
+  --ow-bg: #060E0D;
+  --ow-surface: #0E1B1A;
+  --ow-surface-2: #132524;
+  --ow-line: #1C2E2C;
+  --ow-line-strong: #2C4643;
+
+  /* texto */
+  --ow-text: #F0EDE2;
+  --ow-text-2: #8FA9A6;
+  --ow-text-3: #7E9B98;
+  --ow-text-off: #4E6664;
+
+  /* marca e estados */
+  --ow-accent: #5FD6CE;
+  --ow-accent-hover: #86E4DE;
+  --ow-accent-ink: #03211F;
+  --ow-accent-soft: rgba(95, 214, 206, 0.12);
+  --ow-warn: #E9B65C;
+  --ow-warn-soft: rgba(233, 182, 92, 0.13);
+  --ow-danger: #EE7A66;
+  --ow-danger-soft: rgba(238, 122, 102, 0.13);
+  --ow-veil: rgba(3, 8, 7, 0.55);
+
+  /* tipografia */
+  --ow-font-display: "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
+  --ow-font-body: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --ow-font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  --ow-fs-display: 44px;
+  --ow-fs-title: 28px;
+  --ow-fs-section: 19px;
+  --ow-fs-number: 22px;
+  --ow-fs-body: 15px;
+  --ow-fs-small: 13px;
+  --ow-fs-label: 11px;
+
+  /* forma e espaço (base 4px) */
+  --ow-radius-sm: 3px;
+  --ow-radius: 6px;
+  --ow-radius-lg: 10px;
+  --ow-radius-pill: 999px;
+  --ow-space-1: 4px;
+  --ow-space-2: 8px;
+  --ow-space-3: 12px;
+  --ow-space-4: 16px;
+  --ow-space-5: 24px;
+  --ow-space-6: 32px;
+  --ow-space-7: 48px;
+  --ow-space-8: 72px;
+
+  /* profundidade e movimento */
+  --ow-shadow: 0 1px 0 rgba(240, 237, 226, 0.03) inset, 0 12px 32px -16px rgba(0, 0, 0, 0.7);
+  --ow-ring: 0 0 0 2px var(--ow-bg), 0 0 0 4px var(--ow-accent);
+  --ow-ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --ow-fast: 150ms;
+  --ow-base: 220ms;
+
+  /* camadas */
+  --ow-z-sticky: 20;
+  --ow-z-toast: 50;
+}

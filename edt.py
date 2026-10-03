@@ -9,6 +9,7 @@
     python edt.py vozes [--filtro portug]
     python edt.py sfx [sync|listar]
     python edt.py musica <campanha>                                     (qual faixa cada criativo usaria)
+    python edt.py painel [--porta 8791] [--sem-janela]                 (abre a interface)
 """
 import argparse, os, sys
 
@@ -43,7 +44,12 @@ def main(argv):
     p = sub.add_parser("vozes"); p.add_argument("--filtro", default="portug")
     p = sub.add_parser("sfx"); p.add_argument("acao", nargs="?", default="listar", choices=["listar", "sync"])
     p = sub.add_parser("musica"); p.add_argument("campanha")
+    p = sub.add_parser("painel"); p.add_argument("--porta", type=int, default=8791); p.add_argument("--sem-janela", action="store_true")
     a = ap.parse_args(argv)
+
+    if a.cmd == "painel":
+        from editor import servidor
+        servidor.rodar(a.porta, janela=not a.sem_janela); return 0
 
     if a.cmd == "importar":
         camp, pasta = campanha.importar(a.txt, a.campanha, a.produto)

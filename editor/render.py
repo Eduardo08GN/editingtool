@@ -75,7 +75,9 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
         ov += 1
         fil.append(f"{_mov(png)}[o{ov}]")
         ypos = yexpr if yexpr else str(int(y))
-        fil.append(f"[{cur}][o{ov}]overlay={int(x)}:{ypos}:enable='between(t,{t0:.3f},{t1:.3f})'"
+        # ⭐ intervalo SEMIABERTO [t0, t1): o cartao que sai e o que entra nunca dividem um quadro
+        #    (between() fechado duplicava) e nunca deixam um quadro vazio (folga causava flicker)
+        fil.append(f"[{cur}][o{ov}]overlay={int(x)}:{ypos}:enable='gte(t,{t0:.4f})*lt(t,{t1:.4f})'"
                    + (":eval=frame" if yexpr else "") + f"[v{ov}]")
         cur = f"v{ov}"
 
@@ -94,9 +96,7 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
                                        None, est)
             x = min(max(int(W / 2 - w / 2), int(W * 0.02)), int(W * 0.98) - w)
             corte_cta = plano["cta"]["t"] if LAY.get("esconder_legenda_no_cta", True) else total + 1
-            # ⛔ between() e' fechado nas duas pontas: sem este meio quadro de folga, o cartao que sai e
-            #    o que entra aparecem JUNTOS no quadro da troca (visto em 2026-10-03, 1.5 em 2.1 s)
-            overlay(png, x, cy - h / 2, t0, min(fim, corte_cta) - 0.5 / FPS)
+            overlay(png, x, cy - h / 2, t0, min(fim, corte_cta))
 
     # ── titulo fixo do produto (modelo 2) ──
     if plano.get("titulo"):

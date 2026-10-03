@@ -29,7 +29,8 @@ def conferir(cri, rel, info_tts, dur_final):
     return av
 
 
-def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
+def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, etapa=None):
+    etapa = etapa or (lambda _id, _e: None)
     pasta = os.path.join(camp["_pasta"], "saida", f"{cri['id']}-{config.slug(cri['angulo'], 30)}")
     os.makedirs(pasta, exist_ok=True)
     wav = os.path.join(pasta, "narracao.wav")
@@ -43,6 +44,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
     if not refazer and est.get("hash") == h and os.path.exists(final) and est.get("entregue") and os.path.exists(est["entregue"]):
         log(f"[{cri['id']}] ja' pronto — pulando"); return est
 
+    etapa(cri["id"], "narrando")
     log(f"[{cri['id']}] narracao ({cfg['tts']['provedor']}: {cfg['tts']['voz']})")
     info = tts.narrar(cri["copy"], cri["alvo_s"], wav, cfg["tts"])
     with _LOCK_WHISPER:
@@ -56,10 +58,15 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
         mus = {"arquivo": cfg["audio"]["musica"], "titulo": os.path.basename(cfg["audio"]["musica"]), "perfil": "fixa"}
     plano = montagem.planejar(cri, palavras, info["duracao"], base, cfg, camp.get("nome", ""), mus, camp.get("produto", ""))
     config.escrever_json(os.path.join(pasta, "plano.json"), plano)
+    etapa(cri["id"], "renderizando")
     log(f"[{cri['id']}] render {plano['total']}s, {len(plano['planos'])} planos, {len(plano['sfx'])} sfx, "
         f"musica: {mus['titulo'] if mus else '-'}")
     r = render.renderizar(plano, wav, final, cfg, pasta_tmp=os.path.join(pasta, "_tmp"))
-    entregues = os.path.join(camp["_pasta"], "saida", "_entregues")
+    # ⭐ saida organizada por PUBLICO e ANGULO (pedido do operador, 2026-10-03):
+    #    _entregues/P1-religioso/1.5-equipe-de-batismo/<arquivo>.mp4 — variacoes futuras do angulo caem ali
+    entregues = os.path.join(camp["_pasta"], "saida", "_entregues",
+                             f"P{cri['publico_n']}-{config.slug(cri['publico'], 30)}",
+                             f"{cri['id']}-{config.slug(cri['angulo'], 40)}")
     os.makedirs(entregues, exist_ok=True)
     nome = f"P{cri['publico_n']}_{cri['id']}_{config.slug(cri['angulo'], 30)}_{int(round(r['duracao']))}s.mp4"
     destino = os.path.join(entregues, nome)
@@ -73,11 +80,13 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
           "avisos": conferir(cri, rel, info, r["duracao"]), "final": final, "entregue": destino}
     config.escrever_json(os.path.join(pasta, "qa.json"), qa)
     shutil.rmtree(os.path.join(pasta, "_tmp"), ignore_errors=True)
+    etapa(cri["id"], "entregue")
     log(f"[{cri['id']}] OK -> {nome}" + (f"  AVISOS: {'; '.join(qa['avisos'])}" if qa["avisos"] else ""))
     return qa
 
 
-def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, refazer=False):
+def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, refazer=False, etapa=None, parar=None):
+    etapa = etapa or (lambda _id, _e: None)
     camp = _camp.carregar(nome_camp)
     base = base or camp.get("base")
     if not base or not os.path.exists(base): raise SystemExit(f"video base nao encontrado: {base!r} (use --base)")
@@ -92,6 +101,7 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
     cfg = config.padrao(aj)
     alvo = [c for c in camp["criativos"] if not so or c["id"] in so]
     if not alvo: raise SystemExit("nenhum criativo selecionado")
+    for c in alvo: etapa(c["id"], "fila")
     log(f"campanha '{camp.get('nome')}': {len(alvo)} criativo(s), base {os.path.basename(base)}, {workers} em paralelo")
     usadas, res, erros = {}, [], []
     # ⭐ a escolha de musica depende da ordem (nao repetir no publico): sequencial por publico
@@ -102,8 +112,11 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
     def roda_publico(lst):
         out = []
         for c in lst:
-            try: out.append(produzir_um(camp, c, base, cfg, usadas, log, refazer))
+            if parar is not None and parar.is_set():
+                etapa(c["id"], "parado"); continue
+            try: out.append(produzir_um(camp, c, base, cfg, usadas, log, refazer, etapa))
             except Exception as e:                              # noqa: BLE001
+                etapa(c["id"], "erro")
                 erros.append((c["id"], str(e)[-600:])); log(f"[{c['id']}] ERRO: {e}")
                 traceback.print_exc()
         return out

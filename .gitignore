@@ -11,3 +11,4 @@ campanhas/*/base/
 *.mp3
 *.m4a
 !docs/**/*.png
+painel/node_modules/
