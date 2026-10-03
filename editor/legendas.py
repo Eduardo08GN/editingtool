@@ -74,8 +74,9 @@ ESTILOS = [
     _e(10, "BRANCA", "mont800", "toda branca, sem piscar", track=-0.028, contorno=1 / 20., sombra=(0, 0.08, 0.05, 160),
        base=BRANCO, realce=None, alt=0.048),
     # ⭐ medido no criativo_low_ticket.mp4 (1080x1920): caixa alta ~0.034 H, contorno grosso, amarelo na palavra falada
+    # ⛔ 2026-10-03: "so' a legenda, nada atras" — sombra colada no contorno (sem halo espalhado)
     _e(11, "LOWTICKET", "mont900", "a do criativo de referencia", track=-0.02, esp=0.27, lh=1.32, contorno=1 / 8.,
-       sombra=(0, 0.06, 0.06, 150), base=BRANCO, realce=AMARELO_REF, alt=0.036),
+       sombra=(0, 0.045, 0.012, 120), base=BRANCO, realce=AMARELO_REF, alt=0.036),
 ]
 POR_NUMERO = {e["numero"]: e for e in ESTILOS}
 FOLGA_FORMA = 0.18
@@ -290,5 +291,24 @@ def png_selo(texto, W, path, cor=AMARELO_REF):
                         width=max(3, int(alt_caixa * 0.08)))
     d.text((20 + px - bb[0], 20 + py - bb[1]), texto.upper(), font=f, fill=GRAFITE + (255,))
     img = base.rotate(-5, resample=Image.BICUBIC, expand=True)
+    img.save(path)
+    return img.size
+
+
+def png_titulo(linhas, W, path, cor=AMARELO_REF, cor_texto=GRAFITE):
+    """Selo fixo do produto no topo (modelo 2, criavito2.mp4): caixa amarela arredondada, texto
+    preto em caixa alta, 1-2 linhas centradas. Devolve (w, h)."""
+    alt_caixa = int(W * 0.036)
+    f = carregar("mont800", corpo_para_caixa("mont800", alt_caixa))
+    linhas = [l.upper() for l in linhas if l.strip()]
+    bbs = [f.getbbox(l) for l in linhas]
+    tw = max(b[2] - b[0] for b in bbs); lh = int(alt_caixa * 1.55)
+    px, py = int(alt_caixa * 0.8), int(alt_caixa * 0.62)
+    w, h = tw + 2 * px, lh * (len(linhas) - 1) + alt_caixa + 2 * py
+    img = Image.new("RGBA", (w, h), (0, 0, 0, 0)); d = ImageDraw.Draw(img)
+    d.rounded_rectangle((0, 0, w, h), radius=int(alt_caixa * 0.55), fill=tuple(cor) + (255,))
+    bh = f.getbbox("H")
+    for i, (l, b) in enumerate(zip(linhas, bbs)):
+        d.text(((w - (b[2] - b[0])) / 2 - b[0], py + i * lh - bh[1]), l, font=f, fill=tuple(cor_texto) + (255,))
     img.save(path)
     return img.size

@@ -43,7 +43,7 @@ def cat_or(cat):
     return cat if cat is not None else catalogo()
 
 
-def plano(palavras, cortes, total, cfg_audio, semente, cat=None):
+def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None):
     """[{'t','arquivo','db','max_s','motivo'}] ordenado por tempo."""
     cat = cat_or(cat)
     disp = disponiveis(cat)
@@ -70,8 +70,16 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None):
             if c.startswith("_") or c not in disp: continue
             if n in g["palavras"] and usados.get(c, 0) < g.get("vezes", 1) and t0 < fim_fala:
                 usados[c] = usados.get(c, 0) + 1
-                cand.append((2, max(0.0, t0 - 0.05), c, f"palavra '{w}'"))
-    if cat.get("cortes") in disp:
+                cand.append((3, max(0.0, t0 - 0.05), c, f"palavra '{w}'"))
+    if transicoes:
+        # ⭐ o whoosh casa com a transicao ANIMADA (nao com corte seco); o respiro minimo entre SFX
+        #    mantem a densidade que o operador aprovou em 2026-10-03 (~1 a cada 4 s)
+        efeitos = [t for t in transicoes if t.get("sfx") and 0.5 < t["t"] < fim_fala - 0.3]
+        for k, tr in enumerate(efeitos):
+            c = tr["sfx"] if tr["sfx"] in disp else cat.get("cortes")
+            if c in disp:      # ⭐ transicao animada tem prioridade sobre palavra-chave (2026-10-03)
+                cand.append((2, max(0.0, tr["t"] - tr["dur"] / 2 - 0.08), c, f"transicao {tr['tipo']}"))
+    elif cat.get("cortes") in disp:
         for k, tc in enumerate(cortes):
             if k % 3 == 0 and 0.5 < tc < fim_fala - 0.3:
                 cand.append((3, max(0.0, tc - 0.12), cat["cortes"], "corte"))

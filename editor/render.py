@@ -28,13 +28,37 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
 
     entradas, fil = [], []
     # ── video: planos ──
-    for k, p in enumerate(plano["planos"]):
-        entradas += ["-ss", f"{p['src']:.3f}", "-t", f"{p['dur'] + 0.2:.3f}", "-i", plano["base"]]
-        z = float(p["zoom"]); zw, zh = int(round(W * z / 2) * 2), int(round(H * z / 2) * 2)
-        fil.append(f"[{k}:v]fps={FPS},scale={zw}:{zh}:force_original_aspect_ratio=increase,crop={W}:{H},"
-                   f"setsar=1,trim=duration={p['dur']:.3f},setpts=PTS-STARTPTS[p{k}]")
-    n = len(plano["planos"])
-    fil.append("".join(f"[p{k}]" for k in range(n)) + f"concat=n={n}:v=1:a=0[vc]")
+    # ⭐ TRANSICOES (2026-10-03): cada corte vira um `xfade` centrado no instante do corte. O plano k
+    #    cobre [c_k - d_k/2, c_{k+1} + d_{k+1}/2]: le' meia transicao a mais de cada lado do base, e o
+    #    corte continua caindo exatamente onde a legenda troca. Corte "seco" = xfade de 1 quadro.
+    #    Dentro do plano, push-in lento (zoom z -> z+push_in) para a imagem nunca ficar parada.
+    planos = plano["planos"]; n = len(planos)
+    trans = plano.get("transicoes") or [{"t": None, "xfade": "fade", "dur": 1.0 / FPS} for _ in range(n - 1)]
+    marcas = [0.0]; acc = 0.0
+    for p in planos[:-1]: acc += p["dur"]; marcas.append(acc)
+    meia = [0.0] + [t["dur"] / 2 for t in trans] + [0.0]
+    push = float(V.get("push_in", 0.0))
+    for k, p in enumerate(planos):
+        Lk = p["dur"] + meia[k] + meia[k + 1]
+        src = max(0.0, p["src"] - meia[k])
+        entradas += ["-ss", f"{src:.3f}", "-t", f"{Lk + 0.25:.3f}", "-i", p.get("arquivo") or plano["base"]]
+        z = float(p["zoom"])
+        if push > 0:
+            ze = f"({z:.4f}+{push:.4f}*min(t/{Lk:.3f},1))"
+            esc = (f"scale=w='trunc({W}*{ze}/2)*2':h='trunc({H}*{ze}/2)*2':eval=frame:flags=bicubic")
+        else:
+            esc = f"scale={int(round(W * z / 2) * 2)}:{int(round(H * z / 2) * 2)}"
+        fil.append(f"[{k}:v]fps={FPS},scale={W}:{H}:force_original_aspect_ratio=increase,crop={W}:{H},setsar=1,"
+                   f"trim=duration={Lk + 2.0 / FPS:.3f},setpts=PTS-STARTPTS,{esc},crop={W}:{H},setsar=1,format=yuv420p,settb=AVTB[p{k}]")
+    cur = "p0"
+    for k in range(1, n):
+        t = trans[k - 1]
+        off = max(0.0, marcas[k] - meia[k])
+        fil.append(f"[{cur}][p{k}]xfade=transition={t['xfade']}:duration={max(t['dur'], 1.0 / FPS):.3f}:offset={off:.3f}[x{k}]")
+        cur = f"x{k}"
+    from . import transicoes as _tr
+    fx, extra = _tr.filtros_de_corte(cur, "vc", trans, W, H, tmp, n_entrada=len(entradas) // 6)
+    fil += fx; entradas += extra
     cur = "vc"
     faixas = V.get("borrar_faixa") or []
     if faixas and not isinstance(faixas[0], (list, tuple)): faixas = [faixas]
@@ -56,7 +80,8 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
         cur = f"v{ov}"
 
     # ── legendas ──
-    cy = float(L["centro_y"]) * H
+    LAY = plano.get("layout") or {}
+    cy = float(LAY.get("legenda_y", L["centro_y"])) * H
     cards = plano["cartoes"]
     for ci, c in enumerate(cards):
         prox = cards[ci + 1]["t0"] if ci + 1 < len(cards) else None
@@ -68,20 +93,29 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
             w, h = legendas.png_cartao([p.strip(",.!?;:") for p in c["palavras"]], j, est["alt"] * H, png, W, int(W * 0.86),
                                        None, est)
             x = min(max(int(W / 2 - w / 2), int(W * 0.02)), int(W * 0.98) - w)
-            overlay(png, x, cy - h / 2, t0, min(fim, plano["cta"]["t"]))
+            corte_cta = plano["cta"]["t"] if LAY.get("esconder_legenda_no_cta", True) else total + 1
+            # ⛔ between() e' fechado nas duas pontas: sem este meio quadro de folga, o cartao que sai e
+            #    o que entra aparecem JUNTOS no quadro da troca (visto em 2026-10-03, 1.5 em 2.1 s)
+            overlay(png, x, cy - h / 2, t0, min(fim, corte_cta) - 0.5 / FPS)
+
+    # ── titulo fixo do produto (modelo 2) ──
+    if plano.get("titulo"):
+        png = os.path.join(tmp, "titulo.png")
+        w, h = legendas.png_titulo(plano["titulo"]["linhas"], W, png)
+        overlay(png, W / 2 - w / 2, float(LAY.get("titulo_y", 0.15)) * H - h / 2, plano["titulo"]["t0"], plano["titulo"]["t1"])
 
     # ── selo de preco ──
     if plano.get("preco"):
         png = os.path.join(tmp, "selo.png")
         w, h = legendas.png_selo(plano["preco"]["texto"], W, png)
         t0 = plano["preco"]["t"]
-        overlay(png, W / 2 - w / 2, float(cfg["preco"]["centro_y"]) * H - h / 2, t0, min(t0 + 2.6, plano["cta"]["t"]))
+        overlay(png, W / 2 - w / 2, float(LAY.get("selo_y", cfg["preco"]["centro_y"])) * H - h / 2, t0, min(t0 + 2.6, plano["cta"]["t"]))
 
     # ── CTA final ──
     tc = plano["cta"]["t"]
     png = os.path.join(tmp, "cta.png")
     w, h = legendas.png_cta(plano["cta"]["texto"], W, png)
-    ycta = float(cfg["cta"]["centro_y"]) * H
+    ycta = float(LAY.get("cta_y", cfg["cta"]["centro_y"])) * H
     overlay(png, W / 2 - w / 2, ycta - h / 2, tc, total + 1)
     if cfg["cta"].get("setas", True):
         ps = os.path.join(tmp, "seta.png")
@@ -94,7 +128,7 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
     fil.append(f"[{cur}]format=yuv420p[vout]")
 
     # ── audio ──
-    ia = n
+    ia = entradas.count("-i")       # planos + light leaks entraram antes
     entradas += ["-i", narracao_wav]
     fil.append(f"[{ia}:a]aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur={total:.3f}[nar0]")
     mix = ["[nar]"]

@@ -227,7 +227,25 @@
    "copy": "Pai, daqui a alguns anos, do que você quer que o seu filho lembre? Do pai no celular? Ou do pai sentado no chão falando de Noé e imitando os bichos da Arca? A Bíblia do Bebê tem setenta cards com passagens da Bíblia curtinhas e brincadeiras pra fazer junto. Você imprime, plastifica e deixa do lado da cama. São cinco minutinhos que ficam pra sempre. Garante o seu. Clique em saiba mais e confira."
   }
  ],
- "ajustes": {},
+ "ajustes": {
+  "transicoes": {
+   "_por_que": "operador 2026-10-03: SO' nesta campanha, gravitar em transicao de cartoon",
+   "proporcao": 0.7,
+   "pesos": {
+    "iris": 5,
+    "pop_elastico": 5,
+    "boing": 5,
+    "balanco": 4,
+    "giro_cartoon": 4,
+    "circulo": 2,
+    "zoom_punch": 1.5,
+    "chicote_h": 1,
+    "chicote_v": 1,
+    "luz": 1,
+    "flash": 1
+   }
+  }
+ },
  "nome": "biblia-do-bebe",
- "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\base_teste_criativo_exemplo.mp4"
+ "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\clipes\\Clipes"
 }

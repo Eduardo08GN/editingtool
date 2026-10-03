@@ -24,21 +24,41 @@ def semente(cri_id, campanha=""):
 
 
 # ── video base ────────────────────────────────────────────────────────────────
-def analisar_base(base):
-    """{'duracao','w','h','fps','cortes':[t...]} com cache ao lado do arquivo."""
-    cache = base + ".analise.json"
-    st = os.stat(base); chave = f"{st.st_size}|{int(st.st_mtime)}"
+def _analisar_arquivo(arq):
+    """{'arquivo','duracao','w','h','fps','cortes'} com cache ao lado do arquivo."""
+    cache = arq + ".analise.json"
+    st = os.stat(arq); chave = f"{st.st_size}|{int(st.st_mtime)}"
     d = config.ler_json(cache)
     if d and d.get("chave") == chave: return d
-    info = config.probe(base)
-    r = config.run([config.FFMPEG, "-hide_banner", "-i", base, "-an", "-vf",
+    info = config.probe(arq)
+    r = config.run([config.FFMPEG, "-hide_banner", "-i", arq, "-an", "-vf",
                     "scale=320:-2,select='gt(scene,0.30)',showinfo", "-f", "null", "-"],
                    capture_output=True, text=True, encoding="utf-8", errors="replace")
     cortes = [float(x) for x in re.findall(r"pts_time:([0-9.]+)", r.stderr or "")]
-    d = {"chave": chave, "duracao": info["duracao"], "w": info.get("w"), "h": info.get("h"),
-         "fps": info.get("fps"), "cortes": cortes}
+    d = {"chave": chave, "arquivo": os.path.abspath(arq), "duracao": info["duracao"], "w": info.get("w"),
+         "h": info.get("h"), "fps": info.get("fps"), "cortes": cortes}
     config.escrever_json(cache, d)
     return d
+
+
+EXT_VIDEO = (".mp4", ".mov", ".m4v", ".mkv", ".webm")
+
+
+def _ordem_natural(nome):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r"(\d+)", nome)]
+
+
+def analisar_base(base):
+    """Base = UM video ou uma PASTA de clipes (2026-10-03: o operador entrega 17 clipes soltos).
+    Devolve {'pasta': bool, 'clipes': [analise de cada clipe, em ordem natural], 'duracao': soma}."""
+    if os.path.isdir(base):
+        arqs = sorted((f for f in os.listdir(base) if f.lower().endswith(EXT_VIDEO) and ".limpo." not in f),
+                      key=_ordem_natural)
+        if not arqs: raise SystemExit(f"nenhum video na pasta base: {base}")
+        clipes = [_analisar_arquivo(os.path.join(base, f)) for f in arqs]
+        return {"pasta": True, "clipes": clipes, "duracao": sum(c["duracao"] for c in clipes)}
+    c = _analisar_arquivo(base)
+    return {"pasta": False, "clipes": [c], "duracao": c["duracao"], "cortes": c["cortes"]}
 
 
 def janela(an, cfg_v):
@@ -49,7 +69,7 @@ def janela(an, cfg_v):
 
 
 def pecas_do_base(an, alvo=2.6, ini=0.0, fim=None):
-    """Divide o base em pecas: corta nos cortes de cena e quebra trechos longos em ~alvo s."""
+    """Divide UM clipe em pecas: corta nos cortes de cena e quebra trechos longos em ~alvo s."""
     fim = an["duracao"] if fim is None else fim
     marcas = [ini] + [c for c in an["cortes"] if ini + 0.3 < c < fim - 0.3] + [fim]
     pecas = []
@@ -101,26 +121,57 @@ def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem):
     marcas = [0.0] + cortes + [total]
     duracoes = [b - a for a, b in zip(marcas, marcas[1:])]
 
-    ini, D = janela(an, cfg_v)
-    pecas = pecas_do_base(an, ini=ini, fim=D)
+    # ⭐ FONTES: cada clipe vira uma lista de pecas; o video percorre os clipes NA ORDEM DA HISTORIA
+    #    (imprimir -> recortar -> cards -> mesa), comecando num ponto diferente por criativo.
+    #    Arquivo unico = as pecas dele fazem o papel de clipes (comportamento antigo).
+    if an.get("pasta"):
+        grupos = [[(c["arquivo"], a, b) for a, b in pecas_do_base(c)] for c in an["clipes"]]
+        ultimo_clipe = an["clipes"][-1]
+    else:
+        c = an["clipes"][0]; ini, D = janela(c, cfg_v)
+        grupos = [[(c["arquivo"], a, b)] for a, b in pecas_do_base(c, ini=ini, fim=D)]
+        ultimo_clipe = dict(c, duracao=D)
+    dur_clipe = {}
+    for g in grupos:
+        for arq, a, b in g: dur_clipe[arq] = max(dur_clipe.get(arq, 0), b)
     zooms = list(cfg_v.get("zooms") or [1.0])
     z0 = rng.randrange(len(zooms))
-    ordem = cfg_v.get("ordem", "rotacionada")
-    if ordem == "embaralhada": idx = list(range(len(pecas))); rng.shuffle(idx)
+    nG = len(grupos)
+    ordem = list(range(nG))
+    if cfg_v.get("ordem") == "embaralhada": rng.shuffle(ordem)
     else:
-        ini = rng.randrange(len(pecas)); idx = [(ini + k) % len(pecas) for k in range(len(pecas))]
-    planos = []
+        ini_g = rng.randrange(nG); ordem = [(ini_g + k) % nG for k in range(nG)]
+    fixo_final = cfg_v.get("ultimo_plano_fixo", True)
+    if fixo_final and an.get("pasta"):          # o clipe final fica reservado para o fecho
+        ordem = [g for g in ordem if grupos[g][0][0] != ultimo_clipe["arquivo"]] or ordem
+    planos, cursor = [], 0
     for k, d in enumerate(duracoes):
-        ultimo = k == len(duracoes) - 1
-        if ultimo and cfg_v.get("ultimo_plano_fixo", True):
-            src = max(ini, D - d - 0.15)
-        else:
-            a, b = pecas[idx[k % len(idx)]]
-            folga = (b - a) - d
-            src = a + (rng.uniform(0, folga) if folga > 0 else 0.0)
-            src = max(ini, min(src, D - d - 0.05))
-        planos.append({"dur": round(d, 3), "src": round(src, 3), "zoom": zooms[(z0 + k) % len(zooms)]})
+        if k == len(duracoes) - 1 and fixo_final:
+            arq = ultimo_clipe["arquivo"]
+            planos.append({"arquivo": arq, "dur": round(d, 3), "src": round(max(0.0, ultimo_clipe["duracao"] - d - 0.15), 3),
+                           "zoom": zooms[(z0 + k) % len(zooms)]}); continue
+        escolha = None
+        for tent in range(len(ordem)):
+            g = grupos[ordem[(cursor + tent) % len(ordem)]]
+            # peca que caiba o plano inteiro; senao, qualquer trecho do clipe com folga
+            boas = [p for p in g if p[2] - p[1] >= d]
+            if boas: escolha = rng.choice(boas); cursor += tent + 1; break
+            if dur_clipe[g[0][0]] >= d + 0.1:
+                arq = g[0][0]; a = rng.uniform(0, dur_clipe[arq] - d - 0.05); escolha = (arq, a, a + d); cursor += tent + 1; break
+        if escolha is None:          # nenhum clipe comporta: usa o mais longo
+            arq = max(dur_clipe, key=dur_clipe.get); escolha = (arq, 0.0, dur_clipe[arq])
+        arq, a, b = escolha
+        folga = (b - a) - d
+        src = a + (rng.uniform(0, folga) if folga > 0 else 0.0)
+        src = max(0.0, min(src, dur_clipe[arq] - d - 0.05))
+        planos.append({"arquivo": arq, "dur": round(d, 3), "src": round(src, 3), "zoom": zooms[(z0 + k) % len(zooms)]})
     return planos, cortes
+
+
+# ── transicoes ────────────────────────────────────────────────────────────────
+def transicoes(cortes, cfg_t, sem):
+    from . import transicoes as _tr
+    return _tr.sortear(cortes, cfg_t, sem)
 
 
 # ── preco ─────────────────────────────────────────────────────────────────────
@@ -148,21 +199,39 @@ def momento_preco(palavras, cfg_p):
 
 
 # ── o plano inteiro ───────────────────────────────────────────────────────────
-def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhida=None):
+def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhida=None, campanha_produto=""):
     sem = semente(cri["id"], campanha)
     an = analisar_base(base)
     total = round(dur_narracao + float(cfg["video"]["segura_final_s"]), 3)
+    mod_cfg = cfg.get("modelo", "1")
+    modelo = str((int(cri["id"].split(".")[-1]) % 2) + 1) if mod_cfg == "alternar" else str(mod_cfg)
+    M = (cfg.get("modelos") or {}).get(modelo, {})
     i_cta = _sfx.indice_cta(palavras, cfg["cta"]["gatilho"])
-    ate = i_cta if (i_cta is not None and cfg["legenda"].get("esconder_no_cta", True)) else None
+    esconde = M.get("esconder_legenda_no_cta", cfg["legenda"].get("esconder_no_cta", True))
+    ate = i_cta if (i_cta is not None and esconde) else None
     cards = cartoes(palavras, int(cfg["legenda"]["palavras_por_cartao"]), ate)
     planos, cortes = linha_do_tempo(total, [c["t0"] for c in cards], an, cfg["video"], sem)
     t_cta = palavras[i_cta][1] if i_cta is not None else max(0.0, total - 3.0)
     preco = momento_preco(palavras, cfg["preco"]) if cri.get("preco") else None
+    trans = transicoes(cortes, cfg["transicoes"], sem) if cfg.get("transicoes") else []
+    titulo = None
+    if M.get("titulo"):
+        txt = cfg.get("titulo_texto") or ""
+        linhas = [l.strip() for l in txt.split(chr(10))] if txt else []
+        if not linhas and campanha_produto:
+            a, _, b = campanha_produto.partition(":")
+            linhas = [a.strip() + (":" if b else ""), b.strip()] if b else [a.strip()]
+        if linhas:
+            lim = float(M.get("titulo_ate_frac", 0.62)) * total
+            fim = min([c for c in cortes if c >= lim] or [lim])
+            titulo = {"linhas": linhas, "t0": 0.0, "t1": round(min(fim, t_cta), 3)}
     return {
         "id": cri["id"], "semente": sem, "total": total, "base": os.path.abspath(base),
+        "modelo": modelo, "layout": M, "titulo": titulo,
         "planos": planos, "cortes": [round(c, 3) for c in cortes],
         "cartoes": cards, "cta": {"t": round(t_cta, 3), "texto": cfg["cta"]["texto"]},
         "preco": ({"t": round(preco[0], 3), "texto": preco[1]} if preco else None),
-        "sfx": _sfx.plano(palavras, cortes, total, cfg["audio"], sem),
+        "transicoes": trans,
+        "sfx": _sfx.plano(palavras, cortes, total, cfg["audio"], sem, transicoes=trans),
         "musica": musica_escolhida,
     }

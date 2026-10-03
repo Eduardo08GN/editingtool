@@ -3,7 +3,7 @@
  "origem": "https://drive.google.com/drive/folders/1HCqd9TRGvktSj5T6Kd2V4DzzZA05sVq1",
  "arquivos": {
   "whoosh sound effect.mp3":            {"cat": "transicao", "liberado": true,  "db": 0,  "max_s": 0.8},
-  "CARTOON TRANSITION.mp3":             {"cat": "transicao", "liberado": true,  "db": -2, "max_s": 0.9},
+  "CARTOON TRANSITION.mp3":             {"cat": "transicao", "liberado": false, "db": -2, "max_s": 0.9, "motivo": "operador pediu para tirar (2026-10-03, criativo 5.2 em 0:18)"},
   "FLASHBACK.wav":                      {"cat": "revelar",   "liberado": true,  "db": -4, "max_s": 1.6},
   "Reveal Sound Effect.mp3":            {"cat": "revelar",   "liberado": true,  "db": -2, "max_s": 1.6},
   "Angel - Sound Effect (HD).mp3":      {"cat": "angelical", "liberado": true,  "db": -3, "max_s": 2.2},

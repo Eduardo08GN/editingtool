@@ -7,30 +7,37 @@
   "preset": "medium",
   "plano_min_s": 1.6,
   "plano_max_s": 3.4,
-  "zooms": [1.0, 1.08, 1.0, 1.14, 1.04],
+  "zooms": [
+   1.0,
+   1.08,
+   1.0,
+   1.14,
+   1.04
+  ],
   "ordem": "rotacionada",
   "ultimo_plano_fixo": true,
   "segura_final_s": 0.8,
   "borrar_faixa": null,
-  "janela_base": null
+  "janela_base": null,
+  "push_in": 0.045
  },
  "tts": {
   "provedor": "minimax",
   "modelo": "speech-2.6-hd",
-  "voz": "Portuguese_ChattyGirl",
-  "velocidade": 1.0,
+  "voz": "moss_audio_c12a59b9-7115-11f0-a447-9613c873494c",
+  "velocidade": 1.05,
   "emocao": "",
   "idioma": "Portuguese",
   "ajustar_duracao": true,
-  "tolerancia_s": 1.5,
-  "velocidade_min": 0.9,
-  "velocidade_max": 1.2,
+  "tolerancia_s": 2.0,
+  "velocidade_min": 1.0,
+  "velocidade_max": 1.12,
   "pronuncia": []
  },
  "legenda": {
   "estilo": 11,
   "palavras_por_cartao": 3,
-  "centro_y": 0.70,
+  "centro_y": 0.8,
   "esconder_no_cta": true
  },
  "cta": {
@@ -57,5 +64,32 @@
   "motor": "faster",
   "modelo": "small",
   "idioma": "pt"
+ },
+ "transicoes": {
+  "proporcao": 0.6,
+  "duro_s": 0.034,
+  "pool": [],
+  "pesos": {}
+ },
+ "modelo": "alternar",
+ "modelos": {
+  "1": {
+   "_ref": "criativo_low_ticket.mp4",
+   "legenda_y": 0.8,
+   "esconder_legenda_no_cta": true,
+   "cta_y": 0.885,
+   "titulo": false,
+   "selo_y": 0.22
+  },
+  "2": {
+   "_ref": "criavito2.mp4",
+   "legenda_y": 0.78,
+   "esconder_legenda_no_cta": false,
+   "cta_y": 0.15,
+   "titulo": true,
+   "titulo_y": 0.15,
+   "titulo_ate_frac": 0.62,
+   "selo_y": 0.32
+  }
  }
 }

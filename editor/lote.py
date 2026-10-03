@@ -35,8 +35,11 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
     wav = os.path.join(pasta, "narracao.wav")
     final = os.path.join(pasta, "final.mp4")
     est = config.ler_json(os.path.join(pasta, "qa.json")) or {}
-    st = os.stat(base)
-    h = _hash(cri["copy"], cri["alvo_s"], cfg, base, st.st_size, int(st.st_mtime))
+    if os.path.isdir(base):
+        assin = sorted((f, os.path.getsize(os.path.join(base, f))) for f in os.listdir(base))
+    else:
+        st = os.stat(base); assin = [st.st_size, int(st.st_mtime)]
+    h = _hash(cri["copy"], cri["alvo_s"], cfg, base, assin)
     if not refazer and est.get("hash") == h and os.path.exists(final) and est.get("entregue") and os.path.exists(est["entregue"]):
         log(f"[{cri['id']}] ja' pronto — pulando"); return est
 
@@ -51,7 +54,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False):
         if mus: usadas_musica.setdefault(cri["publico_n"], set()).add(os.path.basename(mus["arquivo"]))
     elif cfg["audio"].get("musica"):
         mus = {"arquivo": cfg["audio"]["musica"], "titulo": os.path.basename(cfg["audio"]["musica"]), "perfil": "fixa"}
-    plano = montagem.planejar(cri, palavras, info["duracao"], base, cfg, camp.get("nome", ""), mus)
+    plano = montagem.planejar(cri, palavras, info["duracao"], base, cfg, camp.get("nome", ""), mus, camp.get("produto", ""))
     config.escrever_json(os.path.join(pasta, "plano.json"), plano)
     log(f"[{cri['id']}] render {plano['total']}s, {len(plano['planos'])} planos, {len(plano['sfx'])} sfx, "
         f"musica: {mus['titulo'] if mus else '-'}")
