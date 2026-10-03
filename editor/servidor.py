@@ -138,7 +138,7 @@ def detalhe_campanha(nome):
                 "voz": cfg["tts"]["voz"], "velocidade": cfg["tts"]["velocidade"], "modelo": cfg.get("modelo"),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
-            "entregues_dir": os.path.join(saida, "_entregues")}
+            "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}
 
 
 def analisar_base(caminho):
@@ -271,6 +271,19 @@ def criar_app(token, hosts):
     @app.post("/api/produzir")
     def produzir(b: Produzir):
         PRODUTOR.iniciar(b.campanha, b.ids or None, b.refazer, b.workers)
+        return {"ok": True}
+
+    @app.post("/api/publicar")
+    def post_publicar(b: Caminho):
+        """b.caminho = nome da campanha. Roda em segundo plano; o resultado aparece na atividade."""
+        if PRODUTOR.rodando: raise HTTPException(409, "espere a producao terminar para publicar")
+        from . import publicar as _pub
+        carregar(b.caminho)
+        def rodar():
+            try: _pub.publicar(b.caminho, log=PRODUTOR.log)
+            except BaseException as e:                       # noqa: BLE001
+                PRODUTOR.log(f"⚠ publicar falhou: {e}")
+        threading.Thread(target=rodar, daemon=True).start()
         return {"ok": True}
 
     @app.post("/api/parar")

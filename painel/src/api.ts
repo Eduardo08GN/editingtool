@@ -26,7 +26,7 @@ export interface Criativo {
 
 export interface Campanha {
   nome: string; produto: string; pasta: string; base: string | null; base_ok: boolean; regra: string[];
-  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string;
+  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; publicar?: { repo: string; pasta: string } | null;
   efetivo: { voz: string; velocidade: number; modelo: string; musica: string; sfx: boolean; legenda_estilo: number;
              transicoes: { proporcao?: number; pesos?: Record<string, number> } };
 }

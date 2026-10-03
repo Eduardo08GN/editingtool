@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, Play, RotateCcw, Square } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, CloudUpload, Play, RotateCcw, Square } from "lucide-react";
 import { enviar, type Criativo, type Linha } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, useAcao } from "../componentes/base";
@@ -15,7 +15,7 @@ function Atividade({ linhas }: { linhas: Linha[] }) {
     <ul className="feed">
       {visiveis.map((l, i) => {
         const ruim = /ERRO|⚠|falhou|AVISOS/i.test(l.texto);
-        const bom = /OK ->|entregue|terminou/i.test(l.texto);
+        const bom = /OK ->|OK —|entregue|terminou/i.test(l.texto);
         return (
           <li key={i}>
             <time>{l.hora}</time>
@@ -84,9 +84,18 @@ export function Painel({ ctx }: { ctx: Ctx }) {
           <p className="eyebrow">Campanha · {camp.produto || nomeBonito(camp.nome)}</p>
           <h1>{numero(cs.length)} criativos <em>· {numero(entregues)} {entregues === 1 ? "entregue" : "entregues"}</em></h1>
         </div>
-        <button className="btn btn-ghost" type="button" onClick={() => rodar("pasta", () => enviar("/api/abrir-pasta", { caminho: camp.entregues_dir }))}>
-          <FolderOpen size={16} aria-hidden />Abrir pasta de entregues
-        </button>
+        <div className="acoes">
+          {camp.publicar?.repo && (
+            <button className="btn btn-ghost" type="button" disabled={estado.rodando || !entregues || !!rodando}
+                    title={`${camp.publicar.repo} → ${camp.publicar.pasta}`}
+                    onClick={() => rodar("pub", () => enviar("/api/publicar", { caminho: camp.nome }), "Enviando para o GitHub. Acompanhe em “Agora há pouco”.")}>
+              {rodando === "pub" ? <Girando /> : <CloudUpload size={16} aria-hidden />}Enviar para o GitHub
+            </button>
+          )}
+          <button className="btn btn-ghost" type="button" onClick={() => rodar("pasta", () => enviar("/api/abrir-pasta", { caminho: camp.entregues_dir }))}>
+            <FolderOpen size={16} aria-hidden />Abrir pasta de entregues
+          </button>
+        </div>
       </header>
 
       <section className={`panel pilot ${ligado ? "" : "is-off"}`} aria-label="Produção">

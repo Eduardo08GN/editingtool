@@ -10,6 +10,7 @@
     python edt.py sfx [sync|listar]
     python edt.py musica <campanha>                                     (qual faixa cada criativo usaria)
     python edt.py painel [--porta 8791] [--sem-janela]                 (abre a interface)
+    python edt.py publicar <campanha> [--repo URL --pasta "dentro/do/repo"]  (manda os entregues ao GitHub)
 """
 import argparse, os, sys
 
@@ -44,9 +45,14 @@ def main(argv):
     p = sub.add_parser("vozes"); p.add_argument("--filtro", default="portug")
     p = sub.add_parser("sfx"); p.add_argument("acao", nargs="?", default="listar", choices=["listar", "sync"])
     p = sub.add_parser("musica"); p.add_argument("campanha")
+    p = sub.add_parser("publicar"); p.add_argument("campanha"); p.add_argument("--repo"); p.add_argument("--pasta")
     p = sub.add_parser("painel"); p.add_argument("--porta", type=int, default=8791); p.add_argument("--sem-janela", action="store_true")
     a = ap.parse_args(argv)
 
+    if a.cmd == "publicar":
+        from editor import publicar
+        r = publicar.publicar(a.campanha, a.repo, a.pasta)
+        print(f"{r['total']} videos em {r['pasta']} ({r['enviados']} alteracoes) -> {r['repo']}"); return 0
     if a.cmd == "painel":
         from editor import servidor
         servidor.rodar(a.porta, janela=not a.sem_janela); return 0

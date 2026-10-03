@@ -247,5 +247,9 @@
   }
  },
  "nome": "biblia-do-bebe",
- "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\clipes\\Clipes"
+ "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\clipes\\Clipes",
+ "publicar": {
+  "repo": "https://github.com/lucasmottasilva18-coder/low-ticket",
+  "pasta": "Idéias Produtos/Rodando/Biblia do Bebe/Criativos Prontos"
+ }
 }
