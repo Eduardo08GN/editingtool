@@ -177,7 +177,8 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produt
     try:
         with open(log_arq, "w", encoding="utf-8", errors="replace") as lf:
             r = config.run([npx, "remotion", "render", "src/index.ts", "Criativo", bruto, f"--props={arq_props}",
-                            f"--public-dir={pub}", "--codec=h264", "--crf=19", f"--concurrency={conc}", f"--port={porta}"],
+                            f"--public-dir={pub}", "--codec=h264", "--crf=19", "--pixel-format=yuv420p", "--color-space=bt709",
+                            f"--concurrency={conc}", f"--port={porta}"],
                            cwd=DIR, stdout=lf, stderr=lf, stdin=subprocess.DEVNULL)
     finally:
         with _TRAVA_PORTA: _PORTAS_EM_USO.discard(porta)
@@ -190,6 +191,8 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produt
                         "-c:a", "aac", "-b:a", "192k", "-movflags", "+faststart", saida])
     if rr.returncode != 0: raise RuntimeError("loudnorm falhou: " + (rr.stderr or "")[-500:])
     os.remove(bruto)
+    from . import formato
+    formato.garantir(saida, log)                        # rede de seguranca: celular toca liso (ver formato.py)
     shutil.rmtree(pub, ignore_errors=True)              # os trechos ficam no cache; a pasta do render sai
     log(f"{rotulo}remotion: {len(props['cards'])} cartoes, render em {t_render:.0f}s")
     return {"saida": saida, "duracao": round(config.duracao(saida), 2), "segundos_render": round(t_render, 1), "motor": "remotion"}

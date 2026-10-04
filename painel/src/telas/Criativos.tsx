@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FolderOpen, RotateCcw, ScanLine } from "lucide-react";
+import { ArrowLeft, FolderOpen, Mic, RotateCcw, ScanLine } from "lucide-react";
 import { enviar, midia, type Criativo } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, Selo, useAcao } from "../componentes/base";
@@ -36,6 +36,14 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
           {c.pasta && (
             <button className="btn btn-ghost" type="button" onClick={() => rodar("pasta", () => enviar("/api/abrir-pasta", { caminho: c.entregue ?? c.pasta! }))}>
               <FolderOpen size={16} aria-hidden />Abrir pasta
+            </button>
+          )}
+          {c.entregue && (
+            <button className="btn btn-ghost" type="button" disabled={ocupado || !camp.base_ok || !!rodando}
+                    title="Pede outra leitura da MiniMax para esta copy (entonação, ênfase ou palavra arrastada)"
+                    onClick={() => rodar("voz", () => enviar("/api/nova-narracao", { campanha: camp.nome, id: c.id }),
+                                        `Nova narração do ${c.id} a caminho. O vídeo é refeito com ela.`)}>
+              {rodando === "voz" ? <Girando /> : <Mic size={16} aria-hidden />}Nova narração
             </button>
           )}
           <button className="btn btn-primary" type="button" disabled={ocupado || !camp.base_ok || !!rodando}

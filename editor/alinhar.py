@@ -122,3 +122,22 @@ def alinhar(wav, copy, cfg):
         rel["motor"] = "proporcional"
         return proporcional(copy, config.duracao(wav)), rel
     return melhor
+
+
+CTA_PALAVRAS = {"saiba", "mais", "clique", "confira", "garanta", "garante"}
+
+
+def esticadas(palavras):
+    """Palavras que a voz ARRASTOU (prosodia quebrada do TTS). [(palavra, inicio, duracao)].
+    ⛔ 2026-10-04 (4.1): "acabou" durou 1,4 s no gancho. Calibrado nas 25 narracoes da Biblia do Bebe:
+       fala normal ~0,07 s por letra; defeito > 0,85 s E > 0,16 s/letra. Palavra com pontuacao no fim
+       (pausa colada) e enfase do CTA ("saiiiba mais") tem margem maior."""
+    import unicodedata
+    out = []
+    for w, a, b in palavras:
+        letras = len([c for c in unicodedata.normalize("NFKD", w) if c.isalpha()]) or 1
+        dur = float(b) - float(a)
+        if w.rstrip()[-1:] in ".,!?;:": continue
+        limite = 1.25 if _cmp(w) in CTA_PALAVRAS else 0.85
+        if dur > limite and dur / letras > 0.16: out.append((w, round(float(a), 2), round(dur, 2)))
+    return out

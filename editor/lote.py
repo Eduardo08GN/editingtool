@@ -63,10 +63,32 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
         log(f"[{cri['id']}] ja' pronto — pulando"); return est
 
     etapa(cri["id"], "narrando")
-    log(f"[{cri['id']}] narracao ({cfg['tts']['provedor']}: {cfg['tts']['voz']})")
-    info = tts.narrar(cri["copy"], cri["alvo_s"], wav, cfg["tts"])
+    # ⭐ TAKE da narracao: 0 = a de sempre; "Nova narracao" no painel soma 1 (arquivo tts_take.json)
+    arq_take = os.path.join(pasta, "tts_take.json")
+    take = int((config.ler_json(arq_take) or {}).get("take", 0))
+    log(f"[{cri['id']}] narracao ({cfg['tts']['provedor']}: {cfg['tts']['voz']}" + (f", take {take}" if take else "") + ")")
+    info = tts.narrar(cri["copy"], cri["alvo_s"], wav, dict(cfg["tts"], take=take))
     with _LOCK_WHISPER:
         palavras, rel = alinhar.alinhar(wav, cri["copy"], cfg["whisper"])
+    # ⭐ voz ARRASTADA (2026-10-04, 4.1): pede outra leitura, ate' 2 vezes, e fica com a melhor
+    ruins = alinhar.esticadas(palavras)
+    melhor = (len(ruins), take)
+    for extra in range(int(cfg["tts"].get("novas_leituras", 2))):
+        if not ruins: break
+        log(f"[{cri['id']}] voz arrastou {', '.join(f'{w!r} ({d}s)' for w, _a, d in ruins)} - pedindo outra leitura")
+        take += 1
+        info = tts.narrar(cri["copy"], cri["alvo_s"], wav, dict(cfg["tts"], take=take))
+        with _LOCK_WHISPER:
+            palavras, rel = alinhar.alinhar(wav, cri["copy"], cfg["whisper"])
+        ruins = alinhar.esticadas(palavras)
+        if len(ruins) < melhor[0]: melhor = (len(ruins), take)
+    if take != melhor[1]:                               # a ultima nao foi a melhor: volta para ela (vem do cache)
+        take = melhor[1]
+        info = tts.narrar(cri["copy"], cri["alvo_s"], wav, dict(cfg["tts"], take=take))
+        with _LOCK_WHISPER:
+            palavras, rel = alinhar.alinhar(wav, cri["copy"], cfg["whisper"])
+        ruins = alinhar.esticadas(palavras)
+    config.escrever_json(arq_take, {"take": take})
     mus = None
     if cfg["audio"].get("musica") == "auto":
         mus = musica.escolher(cri, usadas_musica.get(cri["publico_n"], set()), montagem.semente(cri["id"], camp.get("nome", "")),
@@ -101,10 +123,14 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "turbo": bool(cfg.get("turbo")), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
+    from . import formato
+    formato.garantir(final, log)
+    qa = {"hash": h, "narracao_take": take, "voz_arrastada": ruins, "formato": formato.inspecionar(final)["pix_fmt"],
+          "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "turbo": bool(cfg.get("turbo")), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
-          "avisos": conferir(cri, rel, info, r["duracao"]), "zona_segura": zona_segura(plano, cfg),
+          "avisos": conferir(cri, rel, info, r["duracao"]) + ([f"voz arrastada em {', '.join(w for w, _a, _d in ruins)}: use Nova narracao"]
+                                                               if ruins else []), "zona_segura": zona_segura(plano, cfg),
           "bpm": plano.get("bpm"), "final": final, "entregue": destino}
     config.escrever_json(os.path.join(pasta, "qa.json"), qa)
     shutil.rmtree(os.path.join(pasta, "_tmp"), ignore_errors=True)
@@ -171,7 +197,7 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
     if res and pub.get("repo") and pub.get("pasta") and pub.get("auto", True) and not (parar is not None and parar.is_set()):
         try:
             from . import publicar as _pub
-            _pub.publicar(nome_camp, log=log)
+            _pub.publicar(nome_camp, log=log, ids={q["id"] for q in res})     # so' o que ESTE lote produziu
         except BaseException as e:                              # noqa: BLE001 — publicar nunca derruba o lote
             log(f"⚠ publicar no GitHub falhou (os videos estao salvos; tente 'Enviar para o GitHub'): {e}")
     config.escrever_json(os.path.join(camp["_pasta"], "saida", "relatorio.json"),

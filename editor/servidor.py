@@ -316,6 +316,21 @@ def criar_app(token, hosts):
         threading.Thread(target=rodar, daemon=True).start()
         return {"ok": True}
 
+    @app.post("/api/nova-narracao")
+    async def nova_narracao(request: Request):
+        """Outra leitura da MiniMax para UM criativo (o ouvido do operador achou a entonacao ruim)."""
+        b = await request.json()
+        camp = carregar(b["campanha"])
+        cri = next((c for c in camp["criativos"] if c["id"] == b["id"]), None)
+        if not cri: raise HTTPException(404, "criativo nao existe")
+        pasta = os.path.join(camp["_pasta"], "saida", f"{cri['id']}-{config.slug(cri['angulo'], 30)}")
+        arq = os.path.join(pasta, "tts_take.json")
+        take = int((config.ler_json(arq) or {}).get("take", 0)) + 1
+        os.makedirs(pasta, exist_ok=True); config.escrever_json(arq, {"take": take})
+        PRODUTOR.iniciar(b["campanha"], [cri["id"]], refazer=True, workers=1)
+        PRODUTOR.log(f"[{cri['id']}] nova narracao pedida (leitura {take})")
+        return {"ok": True, "take": take}
+
     @app.post("/api/parar")
     def parar():
         PRODUTOR.parar.set(); PRODUTOR.log("parada pedida: termina o criativo atual e para")

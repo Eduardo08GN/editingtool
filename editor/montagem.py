@@ -107,7 +107,8 @@ def cartoes(palavras, n_max=3, ate=None):
 
 
 # ── linha do tempo ────────────────────────────────────────────────────────────
-IMA_BATIDA_S = 0.14       # o corte so' "pula" para a batida se ela estiver a ate' isto da troca de frase
+IMA_BATIDA_S = 0.14
+FOLGA_CLIPE = 0.3         # imagem que o plano precisa alem do proprio tempo (meias-transicoes)       # o corte so' "pula" para a batida se ela estiver a ate' isto da troca de frase
 
 
 def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
@@ -179,16 +180,18 @@ def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
         for tent in range(len(ordem)):
             g = grupos[ordem[(cursor + tent) % len(ordem)]]
             # peca que caiba o plano inteiro; senao, qualquer trecho do clipe com folga
-            boas = [p for p in g if p[2] - p[1] >= d]
+            # ⛔ 2026-10-04 (4.1): o plano usa imagem tambem na meia-transicao antes e depois do corte;
+            #    sem esta folga, um plano no fim de um clipe curto congelava ~0,13 s
+            boas = [p for p in g if p[2] - p[1] >= d + FOLGA_CLIPE]
             if boas: escolha = rng.choice(boas); cursor += tent + 1; break
-            if dur_clipe[g[0][0]] >= d + 0.1:
-                arq = g[0][0]; a = rng.uniform(0, dur_clipe[arq] - d - 0.05); escolha = (arq, a, a + d); cursor += tent + 1; break
+            if dur_clipe[g[0][0]] >= d + 2 * FOLGA_CLIPE:
+                arq = g[0][0]; a = rng.uniform(FOLGA_CLIPE, dur_clipe[arq] - d - FOLGA_CLIPE); escolha = (arq, a, a + d); cursor += tent + 1; break
         if escolha is None:          # nenhum clipe comporta: usa o mais longo
             arq = max(dur_clipe, key=dur_clipe.get); escolha = (arq, 0.0, dur_clipe[arq])
         arq, a, b = escolha
         folga = (b - a) - d
         src = a + (rng.uniform(0, folga) if folga > 0 else 0.0)
-        src = max(0.0, min(src, dur_clipe[arq] - d - 0.05))
+        src = max(min(FOLGA_CLIPE, max(0.0, dur_clipe[arq] - d)), min(src, dur_clipe[arq] - d - FOLGA_CLIPE))
         planos.append({"arquivo": arq, "dur": round(d, 3), "src": round(src, 3), "zoom": zooms[(z0 + k) % len(zooms)]})
     return planos, cortes
 

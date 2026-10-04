@@ -102,8 +102,10 @@ def sintetizar(texto, saida_wav, cfg, velocidade=None):
     prov = cfg.get("provedor") or "minimax"
     if prov == "minimax" and not cfg.get("voz"):
         raise ErroTTS("nenhuma voz definida (config tts.voz ou EDT_VOZ). Liste com: python edt.py vozes")
+    # ⭐ "take": a MESMA copy pode ganhar outra leitura (a MiniMax nao e' deterministica). take 0 = a de sempre.
+    extra = [int(cfg.get("take") or 0)] if cfg.get("take") else []
     chave = hashlib.sha1(json.dumps([prov, cfg.get("modelo"), cfg.get("voz"), cfg.get("voz_kokoro"), cfg.get("emocao"),
-                                     cfg.get("pronuncia"), round(velocidade, 3), texto], ensure_ascii=False).encode()).hexdigest()[:16]
+                                     cfg.get("pronuncia"), round(velocidade, 3), texto] + extra, ensure_ascii=False).encode()).hexdigest()[:16]
     os.makedirs(TTS_CACHE, exist_ok=True)
     cache_wav = os.path.join(TTS_CACHE, chave + ".wav")
     if not os.path.exists(cache_wav):
