@@ -20,7 +20,7 @@ export interface Estado {
 export interface Criativo {
   id: string; publico_n: number; publico: string; angulo: string; alvo_s: number; preco: boolean; copy: string;
   etapa: Etapa; entregue: string | null; duracao: number | null; avisos: string[];
-  musica: string | null; voz: number | null; sfx: number; modelo: string | null; motor: string | null; transicoes: string[];
+  musica: string | null; voz: number | null; sfx: number; modelo: string | null; motor: string | null; zona_segura: string[]; bpm: number | null; transicoes: string[];
   perfil_musica: string; pasta: string | null;
 }
 

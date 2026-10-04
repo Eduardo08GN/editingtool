@@ -20,6 +20,35 @@ CATALOGO = os.path.join(config.SFX_DIR, "catalogo.json")
 DRIVE_PASTA = "https://drive.google.com/drive/folders/1HCqd9TRGvktSj5T6Kd2V4DzzZA05sVq1"
 
 
+PICOS = os.path.join(config.CACHE_DIR, "sfx_picos.json")
+ENTRADA_MAX = 0.6        # ate' quanto do "embalo" antes do pico entra (o resto do comeco do arquivo e' cortado)
+
+
+def pico(arquivo):
+    """Segundos do arquivo ate' o ponto mais alto (o "impacto"), com cache.
+    ⭐ 2026-10-03 (tecnica do awesome-opus5-5-videos): o SFX entra para que o PICO, e nao o inicio do
+    arquivo, caia no evento. Medido: o whoosh tem o pico em 0,51 s — antes ele chegava meio segundo atrasado."""
+    import subprocess, numpy as np
+    st = os.stat(arquivo); chave = f"{os.path.abspath(arquivo)}|{st.st_size}|{int(st.st_mtime)}"
+    cache = config.ler_json(PICOS, {}) or {}
+    if chave in cache: return cache[chave]
+    raw = config.run([config.FFMPEG, "-v", "error", "-i", arquivo, "-t", "4", "-ac", "1", "-ar", "8000", "-f", "f32le", "-"],
+                     capture_output=True).stdout
+    a = np.abs(np.frombuffer(raw, np.float32))
+    env = np.convolve(a, np.ones(80) / 80, "same") if len(a) > 80 else a
+    t = round(float(np.argmax(env)) / 8000, 3) if len(env) else 0.0
+    cache[chave] = t; config.escrever_json(PICOS, cache)
+    return t
+
+
+def janela(arquivo, max_s):
+    """(inicio_no_arquivo, duracao): um pouco de embalo antes do pico e a cauda depois dele."""
+    pk = pico(arquivo)
+    entrada = min(pk, ENTRADA_MAX)
+    cauda = max(0.4, float(max_s) - pk)
+    return round(pk - entrada, 3), round(entrada + cauda, 3), entrada
+
+
 def catalogo():
     return json.load(io.open(CATALOGO, encoding="utf-8"))
 
@@ -61,7 +90,7 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
         if c in disp: cand.append((0, 0.0, c, "abertura")); break
     i_cta = indice_cta(palavras)
     if i_cta is not None and cat.get("cta") in disp:
-        cand.append((1, max(0.0, palavras[i_cta][1] - 0.05), cat["cta"], "cta"))
+        cand.append((1, palavras[i_cta][1], cat["cta"], "cta"))
     usados = {}
     fim_fala = palavras[i_cta][1] if i_cta is not None else total
     for w, t0, _t1 in palavras:
@@ -70,7 +99,7 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
             if c.startswith("_") or c not in disp: continue
             if n in g["palavras"] and usados.get(c, 0) < g.get("vezes", 1) and t0 < fim_fala:
                 usados[c] = usados.get(c, 0) + 1
-                cand.append((3, max(0.0, t0 - 0.05), c, f"palavra '{w}'"))
+                cand.append((3, t0, c, f"palavra '{w}'"))
     if transicoes:
         # ⭐ o whoosh casa com a transicao ANIMADA (nao com corte seco); o respiro minimo entre SFX
         #    mantem a densidade que o operador aprovou em 2026-10-03 (~1 a cada 4 s)
@@ -78,20 +107,25 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
         for k, tr in enumerate(efeitos):
             c = tr["sfx"] if tr["sfx"] in disp else cat.get("cortes")
             if c in disp:      # ⭐ transicao animada tem prioridade sobre palavra-chave (2026-10-03)
-                cand.append((2, max(0.0, tr["t"] - tr["dur"] / 2 - 0.08), c, f"transicao {tr['tipo']}"))
+                cand.append((2, tr["t"], c, f"transicao {tr['tipo']}"))
     elif cat.get("cortes") in disp:
         for k, tc in enumerate(cortes):
             if k % 3 == 0 and 0.5 < tc < fim_fala - 0.3:
-                cand.append((3, max(0.0, tc - 0.12), cat["cortes"], "corte"))
+                cand.append((3, tc, cat["cortes"], "corte"))
 
     aceitos = []
     for pri, t, c, motivo in sorted(cand, key=lambda x: (x[0], x[1])):
-        if any(abs(t - a["t"]) < espaco for a in aceitos): continue
+        if any(abs(t - a["evento"]) < espaco for a in aceitos): continue      # respiro medido entre EVENTOS
         esc = pega(c)
         if not esc: continue
         arq, meta = esc
-        aceitos.append({"t": round(t, 3), "arquivo": arq, "db": base_db + float(meta.get("db", 0)),
-                        "max_s": float(meta.get("max_s", 1.0)), "categoria": c, "motivo": motivo})
+        # `t` era o evento; agora o som COMECA antes, para o pico cair nele
+        ini_arq, dur, entrada = janela(arq, meta.get("max_s", 1.0))
+        inicio = t - entrada
+        if inicio < 0: ini_arq, dur, inicio = ini_arq - inicio, dur + inicio, 0.0     # abertura em t=0: corta o embalo
+        aceitos.append({"t": round(inicio, 3), "evento": round(t, 3), "arquivo": arq, "inicio_arquivo": round(ini_arq, 3),
+                        "db": base_db + float(meta.get("db", 0)), "max_s": round(max(0.1, dur), 3),
+                        "categoria": c, "motivo": motivo})
     return sorted(aceitos, key=lambda a: a["t"])
 
 

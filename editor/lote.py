@@ -18,6 +18,24 @@ def _hash(*partes):
     return hashlib.sha1(json.dumps(partes, ensure_ascii=False, sort_keys=True, default=str).encode()).hexdigest()[:12]
 
 
+# Zona segura de Reels/Stories da Meta (2026: unificada): topo ~14%, base ~35%, laterais ~6%
+ZONA_TOPO, ZONA_BASE = 0.14, 0.65
+
+
+def zona_segura(plano, cfg):
+    """Informativo (nao e' aviso): o que do texto cai onde o app da Meta desenha a interface por cima."""
+    L = plano.get("layout") or {}
+    itens = [("legenda", float(L.get("legenda_y", cfg["legenda"]["centro_y"]))),
+             ("CTA", float(L.get("cta_y", cfg["cta"]["centro_y"])))]
+    if plano.get("titulo"): itens.append(("título", float(L.get("titulo_y", 0.15))))
+    if plano.get("preco"): itens.append(("selo de preço", float(L.get("selo_y", cfg["preco"]["centro_y"]))))
+    out = []
+    for nome, y in itens:
+        if y > ZONA_BASE: out.append(f"{nome} a {round(y * 100)}% da altura: no Reels a interface cobre de {round(ZONA_BASE * 100)}% para baixo")
+        elif y < ZONA_TOPO + 0.03: out.append(f"{nome} a {round(y * 100)}% da altura: encosta na faixa do topo (até {round(ZONA_TOPO * 100)}%)")
+    return out
+
+
 def conferir(cri, rel, info_tts, dur_final):
     """QA: avisos que a pessoa precisa ver antes de subir o criativo."""
     av = []
@@ -83,7 +101,8 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
-          "avisos": conferir(cri, rel, info, r["duracao"]), "final": final, "entregue": destino}
+          "avisos": conferir(cri, rel, info, r["duracao"]), "zona_segura": zona_segura(plano, cfg),
+          "bpm": plano.get("bpm"), "final": final, "entregue": destino}
     config.escrever_json(os.path.join(pasta, "qa.json"), qa)
     shutil.rmtree(os.path.join(pasta, "_tmp"), ignore_errors=True)
     etapa(cri["id"], "entregue")

@@ -4,6 +4,7 @@ import {
   AbsoluteFill, Audio, Easing, OffthreadVideo, Sequence, interpolate, spring, staticFile, useCurrentFrame, useVideoConfig,
 } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
+import { CameraMotionBlur } from "@remotion/motion-blur";
 import { apresentacao } from "./transicoes";
 
 export type Props = {
@@ -16,8 +17,9 @@ export type Props = {
   preco: { from: number; texto: string } | null;
   titulo: { linhas: string[]; from: number; to: number } | null;
   narracao: string; musica: { src: string; volume: number } | null;
-  sfx: { src: string; from: number; frames: number; volume: number }[];
+  sfx: { src: string; from: number; frames: number; trim?: number; volume: number }[];
   fala: [number, number][];
+  motionBlur?: { amostras: number; obturador: number } | null;
 };
 
 const AMARELO = "#FFE200", GRAFITE = "#111114";
@@ -134,21 +136,50 @@ const Cta: React.FC<{ texto: string; y: number; W: number }> = ({ texto, y, W })
   );
 };
 
+// janelas (em quadros absolutos) das transicoes ANIMADAS: e' so' nelas que o motion blur entra
+function janelasDeTransicao(p: Props): [number, number][] {
+  const out: [number, number][] = []; let ini = 0;
+  p.shots.forEach((s, i) => {
+    const t = p.transicoes[i];
+    const fimShot = ini + s.frames;
+    if (t && t.frames > 0) { out.push([fimShot - t.frames - 1, fimShot + 1]); ini = fimShot - t.frames; }
+    else ini = fimShot;
+  });
+  return out;
+}
+
+const Base: React.FC<{ p: Props; W: number; H: number }> = ({ p, W, H }) => (
+  <TransitionSeries>
+    {p.shots.map((s, i) => (
+      <React.Fragment key={i}>
+        <TransitionSeries.Sequence durationInFrames={s.frames}><Plano s={s} push={p.pushIn} /></TransitionSeries.Sequence>
+        {i < p.transicoes.length && p.transicoes[i].frames > 0 && (
+          <TransitionSeries.Transition presentation={apresentacao(p.transicoes[i].tipo, p.transicoes[i].xfade, W, H, i)}
+                                       timing={linearTiming({ durationInFrames: p.transicoes[i].frames })} />
+        )}
+      </React.Fragment>
+    ))}
+  </TransitionSeries>
+);
+
+// ⭐ motion blur de verdade (varias amostras por quadro), ligado so' durante as transicoes animadas:
+//    e' onde ha' movimento rapido (chicote, giro, pop) e o custo de render fica contido
+const BaseComBlur: React.FC<{ p: Props; W: number; H: number; janelas: [number, number][] }> = ({ p, W, H, janelas }) => {
+  const f = useCurrentFrame();
+  const mb = p.motionBlur;
+  if (mb && janelas.some(([a, b]) => f >= a && f <= b)) {
+    return <CameraMotionBlur shutterAngle={mb.obturador} samples={mb.amostras}><Base p={p} W={W} H={H} /></CameraMotionBlur>;
+  }
+  return <Base p={p} W={W} H={H} />;
+};
+
 export const Criativo: React.FC<Props> = (p) => {
   const { width: W, height: H } = useVideoConfig();
+  const janelas = React.useMemo(() => janelasDeTransicao(p), [p]);
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <TransitionSeries>
-        {p.shots.map((s, i) => (
-          <React.Fragment key={i}>
-            <TransitionSeries.Sequence durationInFrames={s.frames}><Plano s={s} push={p.pushIn} /></TransitionSeries.Sequence>
-            {i < p.transicoes.length && p.transicoes[i].frames > 0 && (
-              <TransitionSeries.Transition presentation={apresentacao(p.transicoes[i].tipo, p.transicoes[i].xfade, W, H, i)}
-                                           timing={linearTiming({ durationInFrames: p.transicoes[i].frames })} />
-            )}
-          </React.Fragment>
-        ))}
-      </TransitionSeries>
+      <BaseComBlur p={p} W={W} H={H} janelas={janelas} />
+
 
       {p.titulo && <Sequence from={p.titulo.from} durationInFrames={p.titulo.to - p.titulo.from}><Titulo t={p.titulo} y={p.layout.tituloY} W={W} /></Sequence>}
       {p.cards.map((c, i) => (
@@ -169,7 +200,7 @@ export const Criativo: React.FC<Props> = (p) => {
       )}
       {p.sfx.map((s, i) => (
         <Sequence key={i} from={s.from} durationInFrames={s.frames}>
-          <Audio src={staticFile(s.src)} volume={(f) => s.volume * interpolate(f, [s.frames - 6, s.frames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />
+          <Audio src={staticFile(s.src)} trimBefore={s.trim ?? 0} volume={(f) => s.volume * interpolate(f, [s.frames - 6, s.frames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })} />
         </Sequence>
       ))}
     </AbsoluteFill>

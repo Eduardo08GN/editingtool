@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FolderOpen, RotateCcw } from "lucide-react";
+import { ArrowLeft, FolderOpen, RotateCcw, ScanLine } from "lucide-react";
 import { enviar, midia, type Criativo } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, Selo, useAcao } from "../componentes/base";
@@ -8,8 +8,20 @@ import { ETAPA, PERFIL, TRANSICAO, seg } from "../textos";
 
 type Filtro = "todos" | "entregue" | "conferir" | "pendente";
 
+// ⭐ as faixas onde o Reels/Stories da Meta desenha a interface por cima do video (guia 2026, unificado)
+function ZonaSegura() {
+  return (
+    <div className="zona" aria-hidden>
+      <div className="z-topo"><span>topo · perfil e barra (14%)</span></div>
+      <div className="z-base"><span>base · legenda do post e botão (35%)</span></div>
+      <div className="z-esq" /><div className="z-dir" />
+    </div>
+  );
+}
+
 function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
   const { rodando, rodar } = useAcao(ctx.avisar);
+  const [zona, setZona] = useState(false);
   const camp = ctx.camp!;
   const ocupado = ctx.estado.rodando;
   return (
@@ -35,7 +47,12 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
       </header>
       <div className="detalhe">
         {c.entregue && c.etapa !== "narrando" && c.etapa !== "renderizando" ? (
-          <video key={c.entregue + String(c.duracao)} src={midia(c.entregue)} controls playsInline preload="metadata" />
+          <div className="video-zona">
+            <video key={c.entregue + String(c.duracao)} src={midia(c.entregue)} controls playsInline preload="metadata" />
+            {zona && <ZonaSegura />}
+            <button className={`btn btn-sm ${zona ? "btn-primary" : "btn-ghost"} botao-zona`} type="button" onClick={() => setZona(!zona)}
+                    aria-pressed={zona}><ScanLine size={14} aria-hidden />Zona segura da Meta</button>
+          </div>
         ) : (
           <div className="panel sem-video">{c.etapa === "narrando" || c.etapa === "renderizando" ? <div><Girando /> {ETAPA[c.etapa].texto}…</div> : "Ainda não produzido."}</div>
         )}
@@ -44,12 +61,17 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
             {c.modelo && <span className="tag tag-neutra">modelo {c.modelo}</span>}
             {c.motor && <span className="tag tag-neutra">{c.motor === "remotion" ? "Remotion" : "motor atual"}</span>}</div>
           {c.avisos.length > 0 && <ul className="aviso-lista">{c.avisos.map((a, i) => <li key={i}>{a}</li>)}</ul>}
+          {c.zona_segura.length > 0 && (
+            <div className="info-zona"><span className="label">Zona segura (informativo)</span>
+              <ul>{c.zona_segura.map((z, i) => <li key={i}>{z}</li>)}</ul></div>
+          )}
           <div><span className="label">Narração (copy)</span><p className="copy">{c.copy}</p></div>
           <div className="dados">
             <div><span className="label">Duração</span><strong>{seg(c.duracao)} <span className="meta">alvo {c.alvo_s}s</span></strong></div>
             <div><span className="label">Velocidade da voz</span><strong>{c.voz ? `${c.voz.toFixed(2)}×` : "—"}</strong></div>
             <div><span className="label">Música</span><strong>{c.musica ?? "—"}</strong><span className="meta">{PERFIL[c.perfil_musica] ?? c.perfil_musica}</span></div>
             <div><span className="label">Efeitos sonoros</span><strong>{c.sfx || "—"}</strong></div>
+            <div><span className="label">Ritmo da música</span><strong>{c.bpm ? `${Math.round(c.bpm)} BPM` : "—"}</strong><span className="meta">cortes na batida</span></div>
           </div>
           {c.transicoes.length > 0 && (
             <div><span className="label">Transições</span>

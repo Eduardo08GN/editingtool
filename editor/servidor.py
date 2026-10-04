@@ -128,6 +128,7 @@ def detalhe_campanha(nome):
             "etapa": etapa, "entregue": entregue, "duracao": qa.get("duracao"), "avisos": qa.get("avisos") or [],
             "musica": (qa.get("musica") or {}).get("titulo"), "voz": (qa.get("tts") or {}).get("velocidade"),
             "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"), "motor": qa.get("motor"),
+            "zona_segura": qa.get("zona_segura") or [], "bpm": qa.get("bpm"),
             "transicoes": [t["tipo"] for t in plano.get("transicoes", []) if t.get("tipo") != "seco"],
             "perfil_musica": musica.perfil(c), "pasta": pasta if os.path.isdir(pasta) else None,
         })

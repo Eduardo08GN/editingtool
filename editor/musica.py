@@ -64,3 +64,39 @@ def escolher(cri, usadas=(), semente=0, minimo_s=0.0):
     topo = livres[:5]
     s, f, p = random.Random(semente).choice(topo)
     return {"arquivo": p, "titulo": f["titulo"], "artista": f["artista"], "perfil": pf, "pontos": s, "dur_s": f["dur_s"]}
+
+
+BATIDAS = os.path.join(config.CACHE_DIR, "batidas.json")
+
+
+def batidas(arquivo):
+    """(bpm, [instantes das batidas em s]) da faixa inteira, com cache.
+    ⭐ 2026-10-03 (tecnica do awesome-opus5-5-videos): o corte cai na batida da musica."""
+    import tempfile
+    st = os.stat(arquivo); chave = f"{os.path.abspath(arquivo)}|{st.st_size}|{int(st.st_mtime)}"
+    cache = config.ler_json(BATIDAS, {}) or {}
+    if chave in cache: return cache[chave]["bpm"], cache[chave]["t"]
+    import librosa
+    wav = os.path.join(tempfile.gettempdir(), f"edt_batida_{os.getpid()}.wav")
+    config.ffmpeg(["-i", arquivo, "-ac", "1", "-ar", "22050", wav])
+    try:
+        y, sr = librosa.load(wav, sr=22050)
+        bpm, quadros = librosa.beat.beat_track(y=y, sr=sr, units="frames")
+        t = [round(float(x), 3) for x in librosa.frames_to_time(quadros, sr=sr)]
+        bpm = float(bpm[0] if hasattr(bpm, "__len__") else bpm)
+    finally:
+        try: os.remove(wav)
+        except OSError: pass
+    cache[chave] = {"bpm": round(bpm, 1), "t": t}; config.escrever_json(BATIDAS, cache)
+    return round(bpm, 1), t
+
+
+def grade(arquivo, dur_faixa, total):
+    """As batidas ao longo do criativo inteiro (a musica entra em t=0 e repete se for curta)."""
+    bpm, t = batidas(arquivo)
+    if not t: return bpm, []
+    out, base = [], 0.0
+    while base < total:
+        out += [base + x for x in t if base + x < total]
+        base += float(dur_faixa)
+    return bpm, out

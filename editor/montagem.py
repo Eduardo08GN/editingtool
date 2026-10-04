@@ -107,17 +107,42 @@ def cartoes(palavras, n_max=3, ate=None):
 
 
 # ── linha do tempo ────────────────────────────────────────────────────────────
-def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem):
-    """[{'dur','src','zoom'}] cobrindo `total` s."""
+IMA_BATIDA_S = 0.14       # o corte so' "pula" para a batida se ela estiver a ate' isto da troca de frase
+
+
+def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
+    """[{'dur','src','zoom'}] cobrindo `total` s.
+    ⭐ Com `batidas` (grade da musica): entre as trocas de frase possiveis, prefere a que esta' mais perto
+    de uma batida e, se a batida estiver a ate' IMA_BATIDA_S, o corte vai PARA a batida — a fala continua
+    casada com a imagem e a edicao ganha o ritmo da musica."""
     rng = random.Random(sem)
     mn, mx = float(cfg_v["plano_min_s"]), float(cfg_v["plano_max_s"])
+    bt = sorted(batidas or [])
+
+    def perto(x):
+        if not bt: return None, 9.0
+        import bisect
+        i = bisect.bisect_left(bt, x)
+        viz = [b for b in bt[max(0, i - 1):i + 1]]
+        b = min(viz, key=lambda b: abs(b - x)); return b, abs(b - x)
+
     cortes, t = [], 0.0
     cand = sorted(c for c in inicios_cartao if c > mn * 0.9)
     while total - t > mx:
         ok = [c for c in cand if t + mn <= c <= t + mx]
-        nxt = rng.choice(ok[:3]) if ok else t + (mn + mx) / 2
+        if ok and bt:
+            ok = sorted(ok, key=lambda c: perto(c)[1])[:2]
+            nxt = rng.choice(ok)
+            b, d = perto(nxt)
+            if b is not None and d <= IMA_BATIDA_S and b - t >= mn * 0.85: nxt = b
+        elif ok:
+            nxt = rng.choice(ok[:3])
+        else:
+            nxt = t + (mn + mx) / 2
+            b, d = perto(nxt)
+            if b is not None and d <= 0.5: nxt = b
         if total - nxt < mn: break
-        cortes.append(nxt); t = nxt
+        cortes.append(round(nxt, 3)); t = nxt
     marcas = [0.0] + cortes + [total]
     duracoes = [b - a for a, b in zip(marcas, marcas[1:])]
 
@@ -210,7 +235,14 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
     esconde = M.get("esconder_legenda_no_cta", cfg["legenda"].get("esconder_no_cta", True))
     ate = i_cta if (i_cta is not None and esconde) else None
     cards = cartoes(palavras, int(cfg["legenda"]["palavras_por_cartao"]), ate)
-    planos, cortes = linha_do_tempo(total, [c["t0"] for c in cards], an, cfg["video"], sem)
+    grade_bt, bpm = None, None
+    if musica_escolhida and cfg["video"].get("cortar_na_batida", True):
+        try:
+            from . import musica as _mus
+            bpm, grade_bt = _mus.grade(musica_escolhida["arquivo"], musica_escolhida.get("dur_s") or 60, total)
+        except Exception as e:                               # noqa: BLE001 — sem batida, corta so' pela fala
+            print(f"   batida: nao consegui analisar a musica ({e}); cortando so' pela fala")
+    planos, cortes = linha_do_tempo(total, [c["t0"] for c in cards], an, cfg["video"], sem, grade_bt)
     t_cta = palavras[i_cta][1] if i_cta is not None else max(0.0, total - 3.0)
     preco = momento_preco(palavras, cfg["preco"]) if cri.get("preco") else None
     trans = transicoes(cortes, cfg["transicoes"], sem) if cfg.get("transicoes") else []
@@ -227,7 +259,7 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
             titulo = {"linhas": linhas, "t0": 0.0, "t1": round(min(fim, t_cta), 3)}
     return {
         "id": cri["id"], "semente": sem, "total": total, "base": os.path.abspath(base),
-        "modelo": modelo, "layout": M, "titulo": titulo,
+        "modelo": modelo, "layout": M, "titulo": titulo, "bpm": bpm,
         "planos": planos, "cortes": [round(c, 3) for c in cortes],
         "cartoes": cards, "cta": {"t": round(t_cta, 3), "texto": cfg["cta"]["texto"]},
         "preco": ({"t": round(preco[0], 3), "texto": preco[1]} if preco else None),

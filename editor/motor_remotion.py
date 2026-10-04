@@ -106,7 +106,8 @@ def montar_props(plano, wav, cfg, pub):
         if fim > ini[0]:
             cards.append({"words": [w.strip(",.!?;:") for w in c["palavras"]], "starts": ini, "from": ini[0], "to": fim})
     a = cfg["audio"]
-    sfx = [{"src": _asset(s["arquivo"], pub), "from": f(s["t"]), "frames": max(1, f(s["max_s"])), "volume": min(1.0, _db(s["db"]))}
+    sfx = [{"src": _asset(s["arquivo"], pub), "from": f(s["t"]), "frames": max(1, f(s["max_s"])), "trim": f(s.get("inicio_arquivo", 0)),
+            "volume": min(1.0, _db(s["db"]))}
            for s in plano.get("sfx") or []]
     musica = None
     if plano.get("musica") and a.get("musica"):
@@ -114,6 +115,9 @@ def montar_props(plano, wav, cfg, pub):
     return {
         "fps": FPS, "width": int(cfg["video"]["largura"]), "height": int(cfg["video"]["altura"]), "totalFrames": total,
         "pushIn": float(cfg["video"].get("push_in", 0.045)), "shots": shots, "transicoes": transicoes, "cards": cards,
+        "motionBlur": ({"amostras": int(cfg["video"]["motion_blur"].get("amostras", 6)),
+                        "obturador": float(cfg["video"]["motion_blur"].get("obturador", 220))}
+                       if (cfg["video"].get("motion_blur") or {}).get("ativo") else None),
         "layout": {"legendaY": float(L.get("legenda_y", cfg["legenda"]["centro_y"])), "ctaY": float(L.get("cta_y", cfg["cta"]["centro_y"])),
                    "tituloY": float(L.get("titulo_y", 0.15)), "seloY": float(L.get("selo_y", cfg["preco"]["centro_y"]))},
         "cta": {"from": t_cta, "texto": plano["cta"]["texto"]},

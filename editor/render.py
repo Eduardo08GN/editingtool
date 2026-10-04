@@ -56,6 +56,13 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
         off = max(0.0, marcas[k] - meia[k])
         fil.append(f"[{cur}][p{k}]xfade=transition={t['xfade']}:duration={max(t['dur'], 1.0 / FPS):.3f}:offset={off:.3f}[x{k}]")
         cur = f"x{k}"
+    # ⭐ motion blur (motor atual): mistura 3 quadros so' na janela das transicoes animadas
+    mb = (V.get("motion_blur") or {})
+    janelas = [(t["t"] - t["dur"] / 2 - 1.0 / FPS, t["t"] + t["dur"] / 2 + 1.0 / FPS) for t in trans
+               if t.get("t") is not None and t.get("tipo") not in (None, "seco")]
+    if mb.get("ativo") and janelas:
+        fil.append(f"[{cur}]tmix=frames=3:enable='" + "+".join(f"between(t,{a:.3f},{b:.3f})" for a, b in janelas) + "'[mb]")
+        cur = "mb"
     from . import transicoes as _tr
     fx, extra = _tr.filtros_de_corte(cur, "vc", trans, W, H, tmp, n_entrada=len(entradas) // 6)
     fil += fx; entradas += extra
@@ -148,7 +155,8 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
     for k, s in enumerate(plano.get("sfx") or []):
         entradas += ["-i", s["arquivo"]]
         ms = int(s["t"] * 1000); m = float(s["max_s"])
-        fil.append(f"[{prox_in + k}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:{m:.3f},asetpts=PTS-STARTPTS,"
+        ia0 = float(s.get("inicio_arquivo", 0.0))
+        fil.append(f"[{prox_in + k}:a]aresample=48000,aformat=channel_layouts=stereo,atrim={ia0:.3f}:{ia0 + m:.3f},asetpts=PTS-STARTPTS,"
                    f"afade=t=out:st={max(0, m - 0.2):.3f}:d=0.2,volume={s['db']:.1f}dB,adelay={ms}|{ms}[s{k}]")
         mix.append(f"[s{k}]")
     fil.append("".join(mix) + f"amix=inputs={len(mix)}:normalize=0:duration=first,"

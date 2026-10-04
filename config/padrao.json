@@ -19,7 +19,12 @@
   "segura_final_s": 0.8,
   "borrar_faixa": null,
   "janela_base": null,
-  "push_in": 0.045
+  "push_in": 0.045,
+  "motion_blur": {
+   "ativo": true,
+   "amostras": 6,
+   "obturador": 220
+  }
  },
  "tts": {
   "provedor": "minimax",
