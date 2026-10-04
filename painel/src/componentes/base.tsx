@@ -39,6 +39,7 @@ export function CardCriativo({ c }: { c: Criativo }) {
         )}
         <Selo etapa={c.etapa} />
         {c.duracao ? <span className="canto">{seg(c.duracao)}</span> : null}
+        {c.turbo && c.entregue ? <span className="canto-turbo" title="Feito no Modo Turbo">⚡</span> : null}
       </div>
       <div className="body">
         <div className="quote">{c.id} · {c.angulo}</div>

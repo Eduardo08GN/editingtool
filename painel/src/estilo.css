@@ -248,3 +248,75 @@ select.campo { appearance: auto; }
 @keyframes brilho-turbo { to { transform: translateX(100%); } }
 .turbo-aviso { border-color: rgba(244, 185, 66, .35); }
 .turbo-aviso .ico-box { background: var(--ow-sunset); color: var(--ow-sun-ink); font-size: 18px; }
+
+/* ══ MODO TURBO: a interface inteira entra no "por do sol" ═══════════════════════════════════ */
+@property --ang { syntax: "<angle>"; initial-value: 0deg; inherits: false; }
+.app.turbo { position: relative; isolation: isolate; }
+/* luz ambiente: dois sois difusos passeando devagar atras de tudo */
+.app.turbo::before, .app.turbo::after {
+  content: ""; position: fixed; z-index: -1; pointer-events: none; border-radius: 50%; filter: blur(80px); opacity: .55;
+}
+.app.turbo::before { width: 760px; height: 520px; top: -260px; right: -120px;
+  background: radial-gradient(closest-side, rgba(246, 196, 83, .38), rgba(232, 131, 58, .16), transparent); animation: sol-a 18s ease-in-out infinite alternate; }
+.app.turbo::after { width: 620px; height: 460px; top: 30%; left: 18%;
+  background: radial-gradient(closest-side, rgba(232, 131, 58, .18), rgba(95, 214, 206, .08), transparent); animation: sol-b 24s ease-in-out infinite alternate; }
+@keyframes sol-a { to { transform: translate(-180px, 120px) scale(1.15); } }
+@keyframes sol-b { to { transform: translate(220px, -80px) scale(.9); } }
+
+/* anel de energia: borda em degrade de por do sol girando no cartao de producao */
+.pilot.pilot-turbo {
+  border: 1.5px solid transparent;
+  background:
+    linear-gradient(180deg, rgba(255, 244, 220, .035), transparent 40%) padding-box,
+    linear-gradient(var(--ow-surface), var(--ow-surface)) padding-box,
+    conic-gradient(from var(--ang), #F6C453, #E8833A, rgba(95, 214, 206, .55), #F0A23B, #F6C453) border-box;
+  box-shadow: 0 0 0 1px rgba(244, 185, 66, .08), 0 30px 70px -30px rgba(240, 162, 59, .45);
+  animation: anel 7s linear infinite;
+}
+@keyframes anel { to { --ang: 360deg; } }
+
+/* faixa com os recursos ligados */
+.faixa-turbo { display: grid; gap: 14px; padding: 16px 18px; border-radius: var(--ow-radius);
+  background: linear-gradient(120deg, rgba(246, 196, 83, .13), rgba(232, 131, 58, .06) 60%, transparent);
+  border: 1px solid rgba(244, 185, 66, .25); }
+.faixa-topo { display: flex; align-items: center; gap: 12px; }
+.faixa-topo strong { font: 800 17px/1.1 var(--ow-font-display); letter-spacing: -.01em;
+  background: var(--ow-sunset); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.faixa-topo .meta { margin-top: 3px; }
+.faixa-topo .btn { margin-left: auto; }
+.raio { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none;
+  background: var(--ow-sunset); color: var(--ow-sun-ink); box-shadow: var(--ow-glow-sun); animation: pulsa-raio 2.2s var(--ow-ease) infinite; }
+@keyframes pulsa-raio { 0%, 100% { box-shadow: 0 0 0 0 rgba(246, 196, 83, .55), var(--ow-glow-sun); } 60% { box-shadow: 0 0 0 10px rgba(246, 196, 83, 0), var(--ow-glow-sun); } }
+.recursos { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.recursos li { display: inline-flex; align-items: center; gap: 6px; height: 28px; padding: 0 11px; border-radius: var(--ow-radius-pill);
+  font: 500 12px/1 var(--ow-font-body); opacity: 0; animation: entra-recurso 420ms var(--ow-ease) forwards; }
+.recursos li.on { color: var(--ow-sun-ink); background: linear-gradient(135deg, #F6C453, #F0A23B); }
+.recursos li.off { color: var(--ow-text-3); background: rgba(255, 255, 255, .05); border: 1px dashed var(--ow-line-strong); }
+.recursos li em { font-style: normal; color: var(--ow-text-off); }
+.recursos .x { font-weight: 700; }
+@keyframes entra-recurso { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: none; } }
+
+/* titulo com brilho correndo, barra com listras em movimento */
+.app.turbo h1 em { background: linear-gradient(100deg, #F6C453 0%, #E8833A 35%, #FFE7A8 50%, #E8833A 65%, #F6C453 100%);
+  background-size: 220% 100%; -webkit-background-clip: text; background-clip: text; animation: brilho-titulo 5s linear infinite; }
+@keyframes brilho-titulo { from { background-position: 120% 0; } to { background-position: -100% 0; } }
+.app.turbo .bar span { background-image: repeating-linear-gradient(-45deg, rgba(255, 255, 255, .22) 0 8px, transparent 8px 16px),
+  linear-gradient(90deg, var(--ow-green-deep), var(--ow-green) 45%, var(--ow-sun) 80%, var(--ow-sun-deep));
+  background-size: 22px 22px, 100% 100%; animation: listras 900ms linear infinite; }
+@keyframes listras { to { background-position: 22px 0, 0 0; } }
+
+/* lateral: logo com brilho e o selo TURBO */
+.selos-marca { display: flex; gap: 6px; align-items: center; }
+.ver.turbo-pill { color: var(--ow-sun-ink); background: var(--ow-sunset); border-color: transparent; box-shadow: var(--ow-glow-sun); }
+.app.turbo .lockup img { filter: drop-shadow(0 0 10px rgba(246, 196, 83, .55)); }
+.app.turbo .nav-i[aria-current="page"] { box-shadow: inset 2px 0 0 var(--ow-sun); }
+
+/* cartao de criativo feito no turbo: raio no canto e borda que acende */
+.vcard .stage .canto-turbo { position: absolute; right: 12px; top: 12px; z-index: 1; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; font-size: 13px; background: var(--ow-sunset); color: var(--ow-sun-ink); box-shadow: var(--ow-glow-sun); }
+.app.turbo .vcard:hover { border-color: rgba(244, 185, 66, .55); box-shadow: 0 24px 50px -22px rgba(240, 162, 59, .55); }
+
+@media (prefers-reduced-motion: reduce) {
+  .app.turbo::before, .app.turbo::after, .pilot.pilot-turbo, .raio, .app.turbo h1 em, .app.turbo .bar span { animation: none !important; }
+  .recursos li { opacity: 1; animation: none !important; }
+}

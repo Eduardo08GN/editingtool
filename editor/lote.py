@@ -101,7 +101,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
+    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "turbo": bool(cfg.get("turbo")), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
           "avisos": conferir(cri, rel, info, r["duracao"]), "zona_segura": zona_segura(plano, cfg),

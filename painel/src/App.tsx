@@ -54,7 +54,7 @@ export function App() {
   }
   const ctx: Ctx = { estado, camp, recarregar: puxar, avisar };
   return (
-    <div className="app">
+    <div className={`app${camp?.efetivo?.turbo ? " turbo" : ""}`}>
       <Lateral ctx={ctx} rota={rota} />
       <main>
         {rota.tela === "painel" && <Painel ctx={ctx} />}

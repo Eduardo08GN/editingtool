@@ -129,11 +129,12 @@ def detalhe_campanha(nome):
             "musica": (qa.get("musica") or {}).get("titulo"), "voz": (qa.get("tts") or {}).get("velocidade"),
             "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"), "motor": qa.get("motor"),
             "zona_segura": qa.get("zona_segura") or [], "bpm": qa.get("bpm"), "motion": qa.get("motion") or [],
+            "turbo": bool(qa.get("turbo") or (qa.get("motor") == "remotion" and qa.get("motion"))),
             "transicoes": [t["tipo"] for t in plano.get("transicoes", []) if t.get("tipo") != "seco"],
             "perfil_musica": musica.perfil(c), "pasta": pasta if os.path.isdir(pasta) else None,
         })
     base = camp.get("base")
-    return {"nome": nome, "produto": camp.get("produto", ""), "pasta": camp["_pasta"], "base": base,
+    return {"nome": nome, "turbo_recursos": turbo_recursos(camp, cfg) if cfg.get("turbo") else [], "produto": camp.get("produto", ""), "pasta": camp["_pasta"], "base": base,
             "base_ok": bool(base and os.path.exists(base)), "regra": _camp.validar(camp), "criativos": criativos,
             "ajustes": camp.get("ajustes") or {}, "efetivo": {
                 "voz": cfg["tts"]["voz"], "velocidade": cfg["tts"]["velocidade"], "modelo": cfg.get("modelo"),
@@ -142,6 +143,30 @@ def detalhe_campanha(nome):
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
             "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}
+
+
+def turbo_recursos(camp, cfg):
+    """O que o Modo Turbo liga nesta campanha, e se cada recurso e' pertinente aqui (com o motivo)."""
+    import re as _re
+    from . import motor_remotion
+    rem = motor_remotion.disponivel()
+    produto = camp.get("produto") or ""
+    tem_num = bool(_re.search(r":\s*\d+\s+\S", produto))
+    bib = os.path.join(config.RAIZ, "musica", "biblioteca")
+    tem_mus = os.path.isdir(bib) and bool(os.listdir(bib))
+    pesos = (cfg.get("transicoes") or {}).get("pesos") or {}
+    estilo = "cartoon" if "iris" in pesos else "editor"
+    return [
+        {"id": "remotion", "nome": "Motor Remotion", "ativo": rem, "nota": "" if rem else "falta o Node.js nesta maquina: usa o motor atual"},
+        {"id": "gancho", "nome": "Gancho animado", "ativo": tem_num and rem,
+         "nota": "" if tem_num else "o nome do produto nao tem numero para contar"},
+        {"id": "fecho", "nome": "Cartao de fecho", "ativo": rem, "nota": ""},
+        {"id": "blur", "nome": "Motion blur", "ativo": True, "nota": "so' nas transicoes animadas"},
+        {"id": "batida", "nome": "Corte na batida", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
+        {"id": "musica", "nome": "Musica automatica", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
+        {"id": "sfx", "nome": "SFX no pico", "ativo": True, "nota": ""},
+        {"id": "transicoes", "nome": f"70% com transicao ({estilo})", "ativo": True, "nota": ""},
+    ]
 
 
 def analisar_base(caminho):

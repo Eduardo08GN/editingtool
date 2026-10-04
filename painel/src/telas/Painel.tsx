@@ -48,6 +48,40 @@ export function GruposPorPublico({ criativos }: { criativos: Criativo[] }) {
   );
 }
 
+// ⭐ a faixa do Modo Turbo: o que esta ligado, o que nao se aplica (e por que) e quantos ja sairam no turbo
+function FaixaTurbo({ ctx }: { ctx: Ctx }) {
+  const camp = ctx.camp!;
+  const { rodando, rodar } = useAcao(ctx.avisar);
+  const feitos = camp.criativos.filter((c) => c.turbo && c.entregue).length;
+  const faltam = camp.criativos.filter((c) => !c.turbo).map((c) => c.id);
+  return (
+    <div className="faixa-turbo">
+      <div className="faixa-topo">
+        <span className="raio" aria-hidden><Zap size={18} /></span>
+        <div>
+          <strong>Turbo ativo</strong>
+          <p className="meta">{feitos}/{camp.criativos.length} criativos já saíram no Turbo</p>
+        </div>
+        {faltam.length > 0 && !ctx.estado.rodando && (
+          <button className="btn btn-primary btn-sm" type="button" disabled={!camp.base_ok || !!rodando}
+                  onClick={() => rodar("turbo-refazer", () => enviar("/api/produzir", { campanha: camp.nome, ids: faltam, refazer: true }),
+                                      `Refazendo ${faltam.length} criativo(s) no Turbo.`)}>
+            {rodando === "turbo-refazer" ? <Girando /> : <Zap size={14} aria-hidden />}Aplicar nos {faltam.length} restantes
+          </button>
+        )}
+      </div>
+      <ul className="recursos">
+        {camp.turbo_recursos.map((r, i) => (
+          <li key={r.id} className={r.ativo ? "on" : "off"} style={{ animationDelay: `${i * 70}ms` }} title={r.nota || undefined}>
+            {r.ativo ? <Check size={13} strokeWidth={2.6} aria-hidden /> : <span className="x" aria-hidden>–</span>}
+            {r.nome}{r.nota && !r.ativo ? <em> · {r.nota}</em> : null}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function Painel({ ctx }: { ctx: Ctx }) {
   const { estado, camp } = ctx;
   const { rodando, rodar } = useAcao(ctx.avisar);
@@ -107,8 +141,9 @@ export function Painel({ ctx }: { ctx: Ctx }) {
         </div>
       </header>
 
-      <section className={`panel pilot ${ligado ? "" : "is-off"}`} aria-label="Produção">
+      <section className={`panel pilot ${ligado ? "" : "is-off"}${camp.efetivo.turbo ? " pilot-turbo" : ""}`} aria-label="Produção">
         <div className="pilot-l">
+          {camp.efetivo.turbo && <FaixaTurbo ctx={ctx} />}
           <div className="pilot-state">
             <span className="live" aria-hidden />
             <div><h2>{titulo}</h2><p>{sub}</p></div>
