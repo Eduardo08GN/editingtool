@@ -41,7 +41,8 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
         )}
         <section className="panel ficha">
           <div className="chips"><Selo etapa={c.etapa} />{c.preco && <span className="tag tag-voce">com preço</span>}
-            {c.modelo && <span className="tag tag-neutra">modelo {c.modelo}</span>}</div>
+            {c.modelo && <span className="tag tag-neutra">modelo {c.modelo}</span>}
+            {c.motor && <span className="tag tag-neutra">{c.motor === "remotion" ? "Remotion" : "motor atual"}</span>}</div>
           {c.avisos.length > 0 && <ul className="aviso-lista">{c.avisos.map((a, i) => <li key={i}>{a}</li>)}</ul>}
           <div><span className="label">Narração (copy)</span><p className="copy">{c.copy}</p></div>
           <div className="dados">

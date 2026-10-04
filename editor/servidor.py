@@ -127,7 +127,7 @@ def detalhe_campanha(nome):
             **{k: c[k] for k in ("id", "publico_n", "publico", "angulo", "alvo_s", "preco", "copy")},
             "etapa": etapa, "entregue": entregue, "duracao": qa.get("duracao"), "avisos": qa.get("avisos") or [],
             "musica": (qa.get("musica") or {}).get("titulo"), "voz": (qa.get("tts") or {}).get("velocidade"),
-            "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"),
+            "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"), "motor": qa.get("motor"),
             "transicoes": [t["tipo"] for t in plano.get("transicoes", []) if t.get("tipo") != "seco"],
             "perfil_musica": musica.perfil(c), "pasta": pasta if os.path.isdir(pasta) else None,
         })
@@ -136,6 +136,7 @@ def detalhe_campanha(nome):
             "base_ok": bool(base and os.path.exists(base)), "regra": _camp.validar(camp), "criativos": criativos,
             "ajustes": camp.get("ajustes") or {}, "efetivo": {
                 "voz": cfg["tts"]["voz"], "velocidade": cfg["tts"]["velocidade"], "modelo": cfg.get("modelo"),
+                "motor": cfg.get("motor", "ffmpeg"),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
             "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}

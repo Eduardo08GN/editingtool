@@ -18,6 +18,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const [voz, setVoz] = useState(ef?.voz ?? "");
   const [vel, setVel] = useState(ef?.velocidade ?? 1);
   const [modelo, setModelo] = useState(ef?.modelo ?? "alternar");
+  const [motor, setMotor] = useState(ef?.motor ?? "remotion");
   const [musica, setMusica] = useState(ef?.musica === "auto");
   const [sfx, setSfx] = useState(ef?.sfx ?? true);
   const temCartoon = !!ef?.transicoes?.pesos && Object.keys(ef.transicoes.pesos).some((k) => k === "iris");
@@ -26,7 +27,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const [autoPub, setAutoPub] = useState(camp?.publicar?.auto !== false);
   useEffect(() => {
     if (!ef) return;
-    setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
+    setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMotor(ef.motor ?? "remotion"); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
     setEstilo(ef.transicoes?.pesos && "iris" in ef.transicoes.pesos ? "cartoon" : "padrao"); setProp(ef.transicoes?.proporcao ?? 0.6);
     setAutoPub(camp?.publicar?.auto !== false);
   }, [camp?.nome]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -36,6 +37,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
     await enviar(`/api/campanhas/${encodeURIComponent(camp.nome)}/ajustes`, {
       tts: { voz: voz.trim(), velocidade: Number(vel) },
       modelo,
+      motor,
       audio: { musica: musica ? "auto" : "", sfx },
       transicoes: { proporcao: Number(prop), pesos: estilo === "cartoon" ? PESOS_CARTOON : {} },
       ...(camp.publicar?.repo ? { publicar: { auto: autoPub } } : {}),
@@ -62,6 +64,15 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
             <input type="range" min={0.9} max={1.25} step={0.01} value={vel} onChange={(e) => setVel(Number(e.target.value))} /></label>
         </div>
         <p className="meta">A ferramenta ajusta a velocidade só um pouco (1,00 a 1,12) para encaixar no tempo da copy, sem mudar a cara da voz.</p>
+      </section>
+
+      <section className="panel bloco" aria-label="Motor de render">
+        <h3>Motor de render</h3>
+        <div className="seg" role="group" aria-label="Motor de render">
+          <button type="button" aria-pressed={motor === "remotion"} onClick={() => setMotor("remotion")}>Remotion · legenda e gráficos animados</button>
+          <button type="button" aria-pressed={motor === "ffmpeg"} onClick={() => setMotor("ffmpeg")}>Atual · mais rápido</button>
+        </div>
+        <p className="meta">Mesmos cortes, voz, música e SFX. O Remotion anima a legenda (a palavra falada pula), o título, o selo e o CTA, e tem transições com mola. Demora ~2 min por criativo (o atual, ~1 min).</p>
       </section>
 
       <section className="panel bloco" aria-label="Edição">

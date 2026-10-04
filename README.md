@@ -27,6 +27,10 @@ pip install -r requirements.txt
 4. Coloque as faixas da Meta Sound Collection em `musica/biblioteca/`, com os nomes de
    `musica/catalogo.json`. Elas ficam fora do git porque a licença vale só nos apps da Meta.
 
+## Motor de render
+
+O padrão é o **Remotion**: legenda, título, selo e CTA animados. Ele precisa do Node.js, e a ferramenta instala o que precisa em `remotion/` sozinha na primeira vez. Em **Ajustes** dá para voltar ao motor original (ffmpeg), que é mais rápido.
+
 ## Interface
 
 Dê dois cliques em `EditingTool.cmd` (ou rode `python edt.py painel`). A janela abre com o painel da campanha:

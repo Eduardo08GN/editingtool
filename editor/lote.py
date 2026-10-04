@@ -40,7 +40,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
         assin = sorted((f, os.path.getsize(os.path.join(base, f))) for f in os.listdir(base))
     else:
         st = os.stat(base); assin = [st.st_size, int(st.st_mtime)]
-    h = _hash(cri["copy"], cri["alvo_s"], cfg, base, assin)
+    h = _hash(cri["copy"], cri["alvo_s"], {k: v for k, v in cfg.items() if not k.startswith("_")}, base, assin)
     if not refazer and est.get("hash") == h and os.path.exists(final) and est.get("entregue") and os.path.exists(est["entregue"]):
         log(f"[{cri['id']}] ja' pronto — pulando"); return est
 
@@ -59,9 +59,15 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     plano = montagem.planejar(cri, palavras, info["duracao"], base, cfg, camp.get("nome", ""), mus, camp.get("produto", ""))
     config.escrever_json(os.path.join(pasta, "plano.json"), plano)
     etapa(cri["id"], "renderizando")
-    log(f"[{cri['id']}] render {plano['total']}s, {len(plano['planos'])} planos, {len(plano['sfx'])} sfx, "
+    log(f"[{cri['id']}] render ({cfg.get('motor', 'ffmpeg')}) {plano['total']}s, {len(plano['planos'])} planos, {len(plano['sfx'])} sfx, "
         f"musica: {mus['titulo'] if mus else '-'}")
-    r = render.renderizar(plano, wav, final, cfg, pasta_tmp=os.path.join(pasta, "_tmp"))
+    # ⭐ MOTOR (Ajustes da campanha): "remotion" = legenda e graficos animados; "ffmpeg" = o original, mais rapido
+    if cfg.get("motor") == "remotion":
+        from . import motor_remotion
+        r = motor_remotion.renderizar_plano(plano, wav, final, cfg, pasta, log, rotulo=f"[{cri['id']}] ")
+    else:
+        r = render.renderizar(plano, wav, final, cfg, pasta_tmp=os.path.join(pasta, "_tmp"))
+        r["motor"] = "ffmpeg"
     # ⭐ saida organizada por PUBLICO e ANGULO (pedido do operador, 2026-10-03):
     #    _entregues/P1-religioso/1.5-equipe-de-batismo/<arquivo>.mp4 — variacoes futuras do angulo caem ali
     entregues = os.path.join(camp["_pasta"], "saida", "_entregues",
@@ -74,7 +80,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    qa = {"hash": h, "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
+    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
           "avisos": conferir(cri, rel, info, r["duracao"]), "final": final, "entregue": destino}
@@ -99,6 +105,10 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
         if isinstance(v, dict): aj.setdefault(k, {}).update(v)
         else: aj[k] = v
     cfg = config.padrao(aj)
+    cfg["_workers"] = max(1, int(workers))          # o motor Remotion divide a CPU entre os renders paralelos
+    if cfg.get("motor") == "remotion":
+        from . import motor_remotion
+        motor_remotion.preparar()                       # instala o Remotion na primeira vez, antes de gastar narracao
     alvo = [c for c in camp["criativos"] if not so or c["id"] in so]
     if not alvo: raise SystemExit("nenhum criativo selecionado")
     for c in alvo: etapa(c["id"], "fila")

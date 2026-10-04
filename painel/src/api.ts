@@ -20,14 +20,14 @@ export interface Estado {
 export interface Criativo {
   id: string; publico_n: number; publico: string; angulo: string; alvo_s: number; preco: boolean; copy: string;
   etapa: Etapa; entregue: string | null; duracao: number | null; avisos: string[];
-  musica: string | null; voz: number | null; sfx: number; modelo: string | null; transicoes: string[];
+  musica: string | null; voz: number | null; sfx: number; modelo: string | null; motor: string | null; transicoes: string[];
   perfil_musica: string; pasta: string | null;
 }
 
 export interface Campanha {
   nome: string; produto: string; pasta: string; base: string | null; base_ok: boolean; regra: string[];
   criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; publicar?: { repo: string; pasta: string; auto?: boolean } | null;
-  efetivo: { voz: string; velocidade: number; modelo: string; musica: string; sfx: boolean; legenda_estilo: number;
+  efetivo: { voz: string; velocidade: number; modelo: string; motor: string; musica: string; sfx: boolean; legenda_estilo: number;
              transicoes: { proporcao?: number; pesos?: Record<string, number> } };
 }
 

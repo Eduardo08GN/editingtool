@@ -34,6 +34,15 @@ player, refazer um so') · **Nova campanha** (colar o mapa de angulos, escolher 
 Codigo: `editor/servidor.py` (FastAPI, so' 127.0.0.1, senha por sessao) + `painel/` (React/Vite;
 `npm run build` gera `painel/dist`, que vai no git para ninguem precisar de Node).
 
+## Motor de render (Ajustes → "Motor de render")
+
+- **Remotion** (padrao desde 2026-10-03, o operador achou "bem melhor"): legenda com a palavra falada
+  pulando, titulo/selo/CTA animados com mola, transicoes cartoon. `remotion/` (Node; a ferramenta roda
+  `npm install` sozinha na primeira vez). ~2-3 min por criativo.
+- **Atual (ffmpeg)**: o original, ~1 min por criativo.
+Os dois leem o MESMO `plano.json` (cortes, voz, musica, SFX). Licenca do Remotion: gratis ate' 3 pessoas
+no time; acima disso, plano "Automators" (US$ 0,01/render, minimo US$ 100/mes).
+
 ## Onde ficam os videos
 
 `campanhas/<nome>/saida/_entregues/P<n>-<publico>/<id>-<angulo>/P<n>_<id>_<angulo>_<dur>s.mp4`
