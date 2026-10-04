@@ -14,7 +14,7 @@ cerebro (narracao, alinhamento, cortes, SFX, musica, QA); este modulo so':
     Agora vai so' o TRECHO de cada plano (cache em .cache/remotion_trechos) e a pasta e' do render
     (renders em paralelo nao apagam os arquivos uns dos outros).
 """
-import hashlib, os, shutil, subprocess, threading, time
+import hashlib, os, re, shutil, subprocess, threading, time
 
 from . import campanha as _camp, config
 
@@ -73,6 +73,23 @@ def _trecho(arq, ini, dur, cfg, pub):
 
 def _db(v):
     return round(10 ** (float(v) / 20.0), 4)
+
+
+def motion_graphics(props, plano, produto):
+    """Gancho animado (contador 0..N + rotulo que vira o titulo) e cartao de fecho (CTA).
+    O numero e o rotulo saem do nome do produto: "Biblia do Bebe: 70 Cards Ludicos" -> 70 / CARDS LUDICOS."""
+    nome, _, resto = (produto or "").partition(":")
+    m = re.match(r"\s*(\d+)\s+(.+)", resto or "")
+    if m:
+        props["gancho"] = {"numero": m.group(1), "rotulo": m.group(2).strip().upper(), "frames": 54,
+                           "tituloY": props["layout"]["tituloY"]}
+        if props.get("titulo"): props["titulo"]["from"] = max(props["titulo"]["from"], 54 - 6)   # o titulo nasce da pilula
+    fim = props["cta"]["from"]
+    linhas = [l for l in (props["titulo"]["linhas"] if props.get("titulo") else [nome.strip(), resto.strip()]) if l]
+    props["fecho"] = {"from": fim, "linhas": [l.upper().rstrip(":") for l in linhas] or ["SAIBA MAIS"], "cta": props["cta"]["texto"]}
+    props["cards"] = [dict(c, to=min(c["to"], fim)) for c in props["cards"] if c["from"] < fim]
+    if props.get("titulo"): props["titulo"]["to"] = min(props["titulo"]["to"], fim)
+    return props
 
 
 def montar_props(plano, wav, cfg, pub):
@@ -138,7 +155,7 @@ def _reservar_porta():
             p += 1
 
 
-def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo=""):
+def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produto=None):
     """Desenha o plano no Remotion e grava `saida` (mp4 com audio a -14 LUFS). Devolve o relatorio."""
     preparar()
     pub = os.path.join(pasta, "_remotion_public")
@@ -146,6 +163,7 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo=""):
     os.makedirs(os.path.join(pub, "fonts"), exist_ok=True)
     for n in os.listdir(FONTES): _ligar(os.path.join(FONTES, n), os.path.join(pub, "fonts", n))
     props = montar_props(plano, wav, cfg, pub)
+    if produto is not None: props = motion_graphics(props, plano, produto)
     arq_props = os.path.join(pasta, "remotion_props.json")
     config.escrever_json(arq_props, props)
     bruto = os.path.join(pasta, "_remotion_bruto.mp4")
@@ -176,7 +194,7 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo=""):
     return {"saida": saida, "duracao": round(config.duracao(saida), 2), "segundos_render": round(t_render, 1), "motor": "remotion"}
 
 
-def renderizar(nome, cid, log=print):
+def renderizar(nome, cid, log=print, motion=False):
     """Linha de comando: desenha no Remotion um criativo que ja' tem plano (saida: final_remotion.mp4)."""
     camp = _camp.carregar(nome)
     cri = next((c for c in camp["criativos"] if c["id"] == cid), None)
@@ -185,5 +203,6 @@ def renderizar(nome, cid, log=print):
     plano = config.ler_json(os.path.join(pasta, "plano.json"))
     if not plano: raise SystemExit(f"{cid} ainda nao tem plano.json: produza o criativo antes")
     cfg = config.padrao(camp.get("ajustes"))
-    return renderizar_plano(plano, os.path.join(pasta, "narracao.wav"), os.path.join(pasta, "final_remotion.mp4"),
-                            cfg, pasta, log, rotulo=f"[{cid}] ")
+    saida = os.path.join(pasta, "final_motion.mp4" if motion else "final_remotion.mp4")
+    return renderizar_plano(plano, os.path.join(pasta, "narracao.wav"), saida, cfg, pasta, log, rotulo=f"[{cid}] ",
+                            produto=(camp.get("produto") or "") if motion else None)

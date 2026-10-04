@@ -45,14 +45,14 @@ def main(argv):
     p = sub.add_parser("vozes"); p.add_argument("--filtro", default="portug")
     p = sub.add_parser("sfx"); p.add_argument("acao", nargs="?", default="listar", choices=["listar", "sync"])
     p = sub.add_parser("musica"); p.add_argument("campanha")
-    p = sub.add_parser("remotion"); p.add_argument("campanha"); p.add_argument("--id", required=True)
+    p = sub.add_parser("remotion"); p.add_argument("campanha"); p.add_argument("--id", required=True); p.add_argument("--motion", action="store_true")
     p = sub.add_parser("publicar"); p.add_argument("campanha"); p.add_argument("--repo"); p.add_argument("--pasta")
     p = sub.add_parser("painel"); p.add_argument("--porta", type=int, default=8791); p.add_argument("--sem-janela", action="store_true")
     a = ap.parse_args(argv)
 
     if a.cmd == "remotion":
         from editor import motor_remotion
-        r = motor_remotion.renderizar(a.campanha, a.id)
+        r = motor_remotion.renderizar(a.campanha, a.id, motion=a.motion)
         print(f"{r['saida']}  ({r['duracao']}s de video, render em {r['segundos_render']}s)"); return 0
     if a.cmd == "publicar":
         from editor import publicar

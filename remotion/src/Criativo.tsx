@@ -6,6 +6,7 @@ import {
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { apresentacao } from "./transicoes";
+import { FechoAnimado, GanchoAnimado, VideoQueEncolhe, type Fecho, type Gancho } from "./motion";
 
 export type Props = {
   fps: number; width: number; height: number; totalFrames: number; pushIn: number;
@@ -20,6 +21,8 @@ export type Props = {
   sfx: { src: string; from: number; frames: number; trim?: number; volume: number }[];
   fala: [number, number][];
   motionBlur?: { amostras: number; obturador: number } | null;
+  gancho?: Gancho | null;
+  fecho?: Fecho | null;
 };
 
 const AMARELO = "#FFE200", GRAFITE = "#111114";
@@ -178,7 +181,8 @@ export const Criativo: React.FC<Props> = (p) => {
   const janelas = React.useMemo(() => janelasDeTransicao(p), [p]);
   return (
     <AbsoluteFill style={{ background: "#000" }}>
-      <BaseComBlur p={p} W={W} H={H} janelas={janelas} />
+      <VideoQueEncolhe fecho={p.fecho ?? null}><BaseComBlur p={p} W={W} H={H} janelas={janelas} /></VideoQueEncolhe>
+      {p.gancho && <Sequence from={0} durationInFrames={p.gancho.frames}><GanchoAnimado g={p.gancho} /></Sequence>}
 
 
       {p.titulo && <Sequence from={p.titulo.from} durationInFrames={p.titulo.to - p.titulo.from}><Titulo t={p.titulo} y={p.layout.tituloY} W={W} /></Sequence>}
@@ -186,7 +190,8 @@ export const Criativo: React.FC<Props> = (p) => {
         <Sequence key={i} from={c.from} durationInFrames={c.to - c.from}><Cartao c={c} y={p.layout.legendaY} W={W} /></Sequence>
       ))}
       {p.preco && <Sequence from={p.preco.from} durationInFrames={80}><Selo texto={p.preco.texto} y={p.layout.seloY} W={W} /></Sequence>}
-      <Sequence from={p.cta.from}><Cta texto={p.cta.texto} y={p.layout.ctaY} W={W} /></Sequence>
+      {p.fecho ? <Sequence from={p.fecho.from}><FechoAnimado fecho={p.fecho} /></Sequence>
+               : <Sequence from={p.cta.from}><Cta texto={p.cta.texto} y={p.layout.ctaY} W={W} /></Sequence>}
 
       <Audio src={staticFile(p.narracao)} />
       {p.musica && (
