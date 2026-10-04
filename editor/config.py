@@ -73,6 +73,28 @@ def padrao(ajustes=None):
            "EDT_LEGENDA": ("legenda", "estilo")}
     for env, (sec, chave) in amb.items():
         if os.environ.get(env): cfg[sec][chave] = os.environ[env]
+    if cfg.get("turbo"): aplicar_turbo(cfg)
+    return cfg
+
+
+def aplicar_turbo(cfg):
+    """⭐ MODO TURBO (pedido do operador, 2026-10-04): liga todos os recursos tops, QUANDO pertinentes.
+    O que e' "pertinente" e' decidido na hora de cada criativo, nao aqui:
+      - gancho animado so' aparece se o nome do produto tiver um numero para contar (motor_remotion);
+      - musica automatica so' toca se a biblioteca tiver faixa; corte na batida so' com musica;
+      - sem Node/Remotion na maquina, o lote cai no motor atual e AVISA (lote.produzir).
+    ⛔ NAO mexe no ESTILO das transicoes (pesos: cartoon na Biblia, editor nas outras) nem na voz/copy:
+       turbo e' "mais recurso", nao "outra cara"."""
+    cfg["motor"] = "remotion"
+    v = cfg["video"]
+    v["motion_graphics"] = {"gancho": True, "fecho": True}
+    v["motion_blur"] = dict(v.get("motion_blur") or {}, ativo=True)
+    v["cortar_na_batida"] = True
+    cfg["audio"]["sfx"] = True
+    if os.path.isdir(os.path.join(RAIZ, "musica", "biblioteca")) and os.listdir(os.path.join(RAIZ, "musica", "biblioteca")):
+        cfg["audio"]["musica"] = "auto"
+    t = cfg.setdefault("transicoes", {})
+    t["proporcao"] = max(float(t.get("proporcao", 0.6)), 0.7)
     return cfg
 
 

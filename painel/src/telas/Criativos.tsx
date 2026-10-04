@@ -59,7 +59,8 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
         <section className="panel ficha">
           <div className="chips"><Selo etapa={c.etapa} />{c.preco && <span className="tag tag-voce">com preço</span>}
             {c.modelo && <span className="tag tag-neutra">modelo {c.modelo}</span>}
-            {c.motor && <span className="tag tag-neutra">{c.motor === "remotion" ? "Remotion" : "motor atual"}</span>}</div>
+            {c.motor && <span className="tag tag-neutra">{c.motor === "remotion" ? "Remotion" : "motor atual"}</span>}
+            {c.motion.length > 0 && <span className="tag tag-neutra">motion: {c.motion.join(" + ")}</span>}</div>
           {c.avisos.length > 0 && <ul className="aviso-lista">{c.avisos.map((a, i) => <li key={i}>{a}</li>)}</ul>}
           {c.zona_segura.length > 0 && (
             <div className="info-zona"><span className="label">Zona segura (informativo)</span>

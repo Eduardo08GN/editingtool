@@ -19,6 +19,8 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const [vel, setVel] = useState(ef?.velocidade ?? 1);
   const [modelo, setModelo] = useState(ef?.modelo ?? "alternar");
   const [motor, setMotor] = useState(ef?.motor ?? "remotion");
+  const [gancho, setGancho] = useState(ef?.motion_graphics?.gancho ?? true);
+  const [fecho, setFecho] = useState(ef?.motion_graphics?.fecho ?? true);
   const [musica, setMusica] = useState(ef?.musica === "auto");
   const [sfx, setSfx] = useState(ef?.sfx ?? true);
   const temCartoon = !!ef?.transicoes?.pesos && Object.keys(ef.transicoes.pesos).some((k) => k === "iris");
@@ -27,7 +29,8 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const [autoPub, setAutoPub] = useState(camp?.publicar?.auto !== false);
   useEffect(() => {
     if (!ef) return;
-    setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMotor(ef.motor ?? "remotion"); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
+    setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMotor(ef.motor ?? "remotion");
+    setGancho(ef.motion_graphics?.gancho ?? true); setFecho(ef.motion_graphics?.fecho ?? true); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
     setEstilo(ef.transicoes?.pesos && "iris" in ef.transicoes.pesos ? "cartoon" : "padrao"); setProp(ef.transicoes?.proporcao ?? 0.6);
     setAutoPub(camp?.publicar?.auto !== false);
   }, [camp?.nome]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -38,6 +41,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
       tts: { voz: voz.trim(), velocidade: Number(vel) },
       modelo,
       motor,
+      video: { motion_graphics: { gancho, fecho } },
       audio: { musica: musica ? "auto" : "", sfx },
       transicoes: { proporcao: Number(prop), pesos: estilo === "cartoon" ? PESOS_CARTOON : {} },
       ...(camp.publicar?.repo ? { publicar: { auto: autoPub } } : {}),
@@ -54,6 +58,14 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
           {rodando === "salvar" ? <Girando /> : <Save size={16} aria-hidden />}Salvar ajustes
         </button>
       </header>
+
+      {ef?.turbo && (
+        <div className="panel attn turbo-aviso">
+          <span className="ico-box">⚡</span>
+          <div><strong>Modo Turbo ligado</strong>
+            <p>Motor Remotion, gancho e fecho animados, motion blur, corte na batida, música e SFX estão no máximo, valendo por cima dos itens abaixo. Voz, modelo e estilo das transições continuam os seus. Desligue no botão do Painel.</p></div>
+        </div>
+      )}
 
       <section className="panel bloco" aria-label="Voz">
         <h3>Voz (MiniMax)</h3>
@@ -73,6 +85,17 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
           <button type="button" aria-pressed={motor === "ffmpeg"} onClick={() => setMotor("ffmpeg")}>Atual · mais rápido</button>
         </div>
         <p className="meta">Mesmos cortes, voz, música e SFX. O Remotion anima a legenda (a palavra falada pula), o título, o selo e o CTA, e tem transições com mola. Demora ~2 min por criativo (o atual, ~1 min).</p>
+      </section>
+
+      <section className="panel bloco" aria-label="Motion graphics">
+        <h3>Motion graphics</h3>
+        {motor !== "remotion" && <p className="meta">Só aparecem com o motor Remotion. No motor atual, estes ajustes ficam guardados mas não entram no vídeo.</p>}
+        <div className="switch-linha"><div><strong>Gancho animado</strong>
+          <p className="meta">Nos primeiros ~2 s: o ponto conta até o número do produto (ex.: 0 → 70), vira a pílula com o rótulo e sobe para virar o título.</p></div>
+          <Interruptor ligado={gancho} mudar={setGancho} rotulo="Gancho animado" /></div>
+        <div className="switch-linha"><div><strong>Cartão de fecho</strong>
+          <p className="meta">No “clique em saiba mais”: o vídeo vira um cartão, o nome do produto se escreve e o botão SAIBA MAIS se forma com as setas.</p></div>
+          <Interruptor ligado={fecho} mudar={setFecho} rotulo="Cartão de fecho" /></div>
       </section>
 
       <section className="panel bloco" aria-label="Edição">

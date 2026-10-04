@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, CloudUpload, Play, RotateCcw, Square } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, CloudUpload, Play, RotateCcw, Square, Zap } from "lucide-react";
 import { enviar, type Criativo, type Linha } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, useAcao } from "../componentes/base";
@@ -85,6 +85,15 @@ export function Painel({ ctx }: { ctx: Ctx }) {
           <h1>{numero(cs.length)} criativos <em>· {numero(entregues)} {entregues === 1 ? "entregue" : "entregues"}</em></h1>
         </div>
         <div className="acoes">
+          <button className="btn btn-turbo" type="button" aria-pressed={camp.efetivo.turbo} disabled={!!rodando}
+                  title="Liga todos os recursos tops quando pertinentes: Remotion, gancho e fecho animados, motion blur, corte na batida, música e SFX no pico"
+                  onClick={() => rodar("turbo", async () => {
+                    await enviar(`/api/campanhas/${encodeURIComponent(camp.nome)}/ajustes`, { turbo: !camp.efetivo.turbo });
+                    ctx.recarregar();
+                  }, camp.efetivo.turbo ? "Modo Turbo desligado: valem os Ajustes da campanha."
+                                        : "Modo Turbo ligado: os próximos criativos saem com todos os recursos tops. Use Refazer para aplicar nos prontos.")}>
+            {rodando === "turbo" ? <Girando /> : <Zap size={16} aria-hidden />}Modo Turbo{camp.efetivo.turbo ? " · ligado" : ""}
+          </button>
           {camp.publicar?.repo && (
             <button className="btn btn-ghost" type="button" disabled={estado.rodando || !entregues || !!rodando}
                     title={`${camp.publicar.repo} → ${camp.publicar.pasta}`}

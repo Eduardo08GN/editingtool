@@ -75,15 +75,16 @@ def _db(v):
     return round(10 ** (float(v) / 20.0), 4)
 
 
-def motion_graphics(props, plano, produto):
+def motion_graphics(props, plano, produto, gancho=True, fecho=True):
     """Gancho animado (contador 0..N + rotulo que vira o titulo) e cartao de fecho (CTA).
     O numero e o rotulo saem do nome do produto: "Biblia do Bebe: 70 Cards Ludicos" -> 70 / CARDS LUDICOS."""
     nome, _, resto = (produto or "").partition(":")
     m = re.match(r"\s*(\d+)\s+(.+)", resto or "")
-    if m:
+    if gancho and m:
         props["gancho"] = {"numero": m.group(1), "rotulo": m.group(2).strip().upper(), "frames": 54,
                            "tituloY": props["layout"]["tituloY"]}
         if props.get("titulo"): props["titulo"]["from"] = max(props["titulo"]["from"], 54 - 6)   # o titulo nasce da pilula
+    if not fecho: return props
     fim = props["cta"]["from"]
     linhas = [l for l in (props["titulo"]["linhas"] if props.get("titulo") else [nome.strip(), resto.strip()]) if l]
     props["fecho"] = {"from": fim, "linhas": [l.upper().rstrip(":") for l in linhas] or ["SAIBA MAIS"], "cta": props["cta"]["texto"]}
@@ -155,7 +156,7 @@ def _reservar_porta():
             p += 1
 
 
-def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produto=None):
+def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produto=None, gancho=True, fecho=True):
     """Desenha o plano no Remotion e grava `saida` (mp4 com audio a -14 LUFS). Devolve o relatorio."""
     preparar()
     pub = os.path.join(pasta, "_remotion_public")
@@ -163,7 +164,7 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produt
     os.makedirs(os.path.join(pub, "fonts"), exist_ok=True)
     for n in os.listdir(FONTES): _ligar(os.path.join(FONTES, n), os.path.join(pub, "fonts", n))
     props = montar_props(plano, wav, cfg, pub)
-    if produto is not None: props = motion_graphics(props, plano, produto)
+    if produto is not None and (gancho or fecho): props = motion_graphics(props, plano, produto, gancho, fecho)
     arq_props = os.path.join(pasta, "remotion_props.json")
     config.escrever_json(arq_props, props)
     bruto = os.path.join(pasta, "_remotion_bruto.mp4")

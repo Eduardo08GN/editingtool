@@ -24,6 +24,10 @@
    "ativo": true,
    "amostras": 6,
    "obturador": 220
+  },
+  "motion_graphics": {
+   "gancho": true,
+   "fecho": true
   }
  },
  "tts": {

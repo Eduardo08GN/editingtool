@@ -82,7 +82,10 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     # ⭐ MOTOR (Ajustes da campanha): "remotion" = legenda e graficos animados; "ffmpeg" = o original, mais rapido
     if cfg.get("motor") == "remotion":
         from . import motor_remotion
-        r = motor_remotion.renderizar_plano(plano, wav, final, cfg, pasta, log, rotulo=f"[{cri['id']}] ")
+        mg = cfg["video"].get("motion_graphics") or {}
+        r = motor_remotion.renderizar_plano(plano, wav, final, cfg, pasta, log, rotulo=f"[{cri['id']}] ",
+                                            produto=camp.get("produto") or "", gancho=bool(mg.get("gancho")), fecho=bool(mg.get("fecho")))
+        r["motion"] = [k for k in ("gancho", "fecho") if mg.get(k)]
     else:
         r = render.renderizar(plano, wav, final, cfg, pasta_tmp=os.path.join(pasta, "_tmp"))
         r["motor"] = "ffmpeg"
@@ -98,7 +101,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
+    qa = {"hash": h, "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
           "avisos": conferir(cri, rel, info, r["duracao"]), "zona_segura": zona_segura(plano, cfg),
@@ -127,7 +130,13 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
     cfg["_workers"] = max(1, int(workers))          # o motor Remotion divide a CPU entre os renders paralelos
     if cfg.get("motor") == "remotion":
         from . import motor_remotion
-        motor_remotion.preparar()                       # instala o Remotion na primeira vez, antes de gastar narracao
+        try:
+            motor_remotion.preparar()                   # instala o Remotion na primeira vez, antes de gastar narracao
+        except Exception as e:                          # noqa: BLE001
+            if not cfg.get("turbo"): raise
+            cfg["motor"] = "ffmpeg"                     # turbo e' "o melhor POSSIVEL": sem Node, segue no motor atual
+            log(f"⚠ turbo: Remotion indisponivel nesta maquina ({str(e)[:120]}); usando o motor atual")
+    if cfg.get("turbo"): log("turbo ligado: Remotion, motion graphics, motion blur, corte na batida, musica e SFX no pico")
     alvo = [c for c in camp["criativos"] if not so or c["id"] in so]
     if not alvo: raise SystemExit("nenhum criativo selecionado")
     for c in alvo: etapa(c["id"], "fila")

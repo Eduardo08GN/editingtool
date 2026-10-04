@@ -128,7 +128,7 @@ def detalhe_campanha(nome):
             "etapa": etapa, "entregue": entregue, "duracao": qa.get("duracao"), "avisos": qa.get("avisos") or [],
             "musica": (qa.get("musica") or {}).get("titulo"), "voz": (qa.get("tts") or {}).get("velocidade"),
             "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"), "motor": qa.get("motor"),
-            "zona_segura": qa.get("zona_segura") or [], "bpm": qa.get("bpm"),
+            "zona_segura": qa.get("zona_segura") or [], "bpm": qa.get("bpm"), "motion": qa.get("motion") or [],
             "transicoes": [t["tipo"] for t in plano.get("transicoes", []) if t.get("tipo") != "seco"],
             "perfil_musica": musica.perfil(c), "pasta": pasta if os.path.isdir(pasta) else None,
         })
@@ -137,7 +137,8 @@ def detalhe_campanha(nome):
             "base_ok": bool(base and os.path.exists(base)), "regra": _camp.validar(camp), "criativos": criativos,
             "ajustes": camp.get("ajustes") or {}, "efetivo": {
                 "voz": cfg["tts"]["voz"], "velocidade": cfg["tts"]["velocidade"], "modelo": cfg.get("modelo"),
-                "motor": cfg.get("motor", "ffmpeg"),
+                "motor": cfg.get("motor", "ffmpeg"), "motion_graphics": cfg["video"].get("motion_graphics") or {},
+                "turbo": bool(cfg.get("turbo")),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
             "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}

@@ -239,3 +239,12 @@ select.campo { appearance: auto; }
 .botao-zona { position: absolute; top: 10px; right: 10px; }
 .info-zona { padding: 10px 14px; border-radius: var(--ow-radius); background: rgba(255, 255, 255, .04); border: 1px solid var(--ow-line); }
 .info-zona ul { margin: 6px 0 0; padding-left: 18px; color: var(--ow-text-2); font-size: var(--ow-fs-small); }
+
+/* modo turbo: botao que acende em por do sol, com brilho correndo quando ligado */
+.btn-turbo { border: 1px solid var(--ow-line-strong); color: var(--ow-text); position: relative; overflow: hidden; }
+.btn-turbo:hover { border-color: var(--ow-sun); color: var(--ow-sun); }
+.btn-turbo[aria-pressed="true"] { background: var(--ow-sunset); color: var(--ow-sun-ink); border-color: transparent; box-shadow: var(--ow-glow-sun); }
+.btn-turbo[aria-pressed="true"]::after { content: ""; position: absolute; inset: 0; background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.45) 50%, transparent 70%); transform: translateX(-100%); animation: brilho-turbo 2.4s var(--ow-ease) infinite; }
+@keyframes brilho-turbo { to { transform: translateX(100%); } }
+.turbo-aviso { border-color: rgba(244, 185, 66, .35); }
+.turbo-aviso .ico-box { background: var(--ow-sunset); color: var(--ow-sun-ink); font-size: 18px; }
