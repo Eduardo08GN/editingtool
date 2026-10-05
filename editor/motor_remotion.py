@@ -127,6 +127,15 @@ def motion_graphics(props, plano, produto, gancho=True, fecho=True, pub=None, cf
             for cat, t, mot, grau in (("pop", 22 / FPS, "gancho chega no numero", 2), ("transicao", (54 - 12) / FPS, "pilula sobe", 0)):
                 e = _sfx.avulso(cat, t, mot, cfg_audio, plano.get("semente", 0) + len(props["sfx"]), tom, grau)
                 if e: props["sfx"].append(_som_props(e, pub))
+    if pub and cfg_audio is not None and cfg_audio.get("sfx", True):
+        # ⭐ selo de confianca entra com um pop afinado na musica (baixinho: o selo e' o protagonista)
+        from . import sfx as _sfx
+        tom = tuple(plano["tom"]) if plano.get("tom") else None
+        for k, s in enumerate(plano.get("selos") or []):
+            ev = s["t"] + 6 / FPS
+            if any(abs(x["from"] / FPS - ev) < 0.35 for x in props["sfx"]): continue
+            e = _sfx.avulso("pop", ev, f"selo {s['tipo']}", cfg_audio, plano.get("semente", 0) + 31 + k, tom, 1, db_extra=-3)
+            if e: props["sfx"].append(_som_props(e, pub))
     if not fecho: return props
     fim = props["cta"]["from"]
     linhas = [l for l in (props["titulo"]["linhas"] if props.get("titulo") else [nome.strip(), resto.strip()]) if l]
@@ -161,7 +170,8 @@ def montar_props(plano, wav, cfg, pub):
         ini = max(0.0, float(p["src"]) - h0 / FPS)
         shots.append({"src": _trecho(p.get("arquivo") or plano["base"], ini, frames / FPS + 0.3, cfg, pub), "trim": 0,
                       "frames": frames, "zoom": float(p.get("zoom", 1.0))})
-    transicoes = [{"tipo": t.get("tipo", "seco"), "xfade": t.get("xfade", ""), "frames": durs[k + 1]} for k, t in enumerate(trans)]
+    transicoes = [{"tipo": t.get("tipo", "seco"), "xfade": t.get("xfade", ""), "frames": durs[k + 1], "sinal": int(t.get("sinal", 1))}
+                  for k, t in enumerate(trans)]
     L = plano.get("layout") or {}
     t_cta = f(plano["cta"]["t"])
     esconde = L.get("esconder_legenda_no_cta", True)
@@ -180,7 +190,11 @@ def montar_props(plano, wav, cfg, pub):
            for s in plano.get("sfx") or []]
     musica = None
     if plano.get("musica") and a.get("musica"):
-        musica = {"src": _asset(plano["musica"]["arquivo"], pub), "volume": _db(a.get("musica_db", -23)) * 1.8}
+        # ⭐ musica RECORTADA sob a voz (so' o meio cede; grave e brilho ficam) — editor/mixagem.py
+        from . import mixagem
+        esc = mixagem.esculpir(plano["musica"]["arquivo"], wav, float(plano["total"]), a)
+        musica = ({"src": _asset(esc, pub), "volume": 1.8, "esculpida": True} if esc else
+                  {"src": _asset(plano["musica"]["arquivo"], pub), "volume": _db(a.get("musica_db", -23)) * 1.8})
     return {
         "fps": FPS, "width": int(cfg["video"]["largura"]), "height": int(cfg["video"]["altura"]), "totalFrames": total,
         "pushIn": float(cfg["video"].get("push_in", 0.045)), "shots": shots, "transicoes": transicoes, "cards": cards,
@@ -194,6 +208,7 @@ def montar_props(plano, wav, cfg, pub):
         "titulo": {"linhas": plano["titulo"]["linhas"], "from": f(plano["titulo"]["t0"]), "to": f(plano["titulo"]["t1"])} if plano.get("titulo") else None,
         "narracao": _asset(wav, pub), "musica": musica, "sfx": sfx,
         "emojis": _emojis(plano, pub, t_cta),
+        "selos": [{"tipo": s["tipo"], "linhas": s["linhas"], "from": f(s["t"]), "frames": f(s["dur"])} for s in plano.get("selos") or []],
         "fala": [[c["from"], c["to"]] for c in cards],          # a musica abaixa por baixo da voz
     }
 

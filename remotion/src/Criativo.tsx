@@ -8,23 +8,25 @@ import { CameraMotionBlur } from "@remotion/motion-blur";
 import { apresentacao } from "./transicoes";
 import { FechoAnimado, GanchoAnimado, VideoQueEncolhe, type Fecho, type Gancho } from "./motion";
 import { AnimatedEmoji } from "@remotion/animated-emoji";
+import { Confete, SeloConfianca, type SeloConf } from "./selos";
 
 export type Props = {
   fps: number; width: number; height: number; totalFrames: number; pushIn: number;
   shots: { src: string; trim: number; frames: number; zoom: number }[];
-  transicoes: { tipo: string; xfade: string; frames: number }[];
+  transicoes: { tipo: string; xfade: string; frames: number; sinal?: number }[];
   cards: { words: string[]; starts: number[]; from: number; to: number }[];
   layout: { legendaY: number; ctaY: number; tituloY: number; seloY: number };
   cta: { from: number; texto: string };
   preco: { from: number; texto: string } | null;
   titulo: { linhas: string[]; from: number; to: number } | null;
-  narracao: string; musica: { src: string; volume: number } | null;
+  narracao: string; musica: { src: string; volume: number; esculpida?: boolean } | null;
   sfx: { src: string; from: number; frames: number; trim?: number; volume: number }[];
   fala: [number, number][];
   motionBlur?: { amostras: number; obturador: number } | null;
   gancho?: Gancho | null;
   fecho?: Fecho | null;
   emojis?: { nome: string; from: number; frames: number }[];
+  selos?: SeloConf[];
 };
 
 const AMARELO = "#FFE200", GRAFITE = "#111114";
@@ -159,7 +161,7 @@ const Base: React.FC<{ p: Props; W: number; H: number }> = ({ p, W, H }) => (
       <React.Fragment key={i}>
         <TransitionSeries.Sequence durationInFrames={s.frames}><Plano s={s} push={p.pushIn} /></TransitionSeries.Sequence>
         {i < p.transicoes.length && p.transicoes[i].frames > 0 && (
-          <TransitionSeries.Transition presentation={apresentacao(p.transicoes[i].tipo, p.transicoes[i].xfade, W, H, i)}
+          <TransitionSeries.Transition presentation={apresentacao(p.transicoes[i].tipo, p.transicoes[i].xfade, W, H, i, p.transicoes[i].sinal)}
                                        timing={linearTiming({ durationInFrames: p.transicoes[i].frames })} />
         )}
       </React.Fragment>
@@ -214,15 +216,20 @@ export const Criativo: React.FC<Props> = (p) => {
         <Sequence key={`e${i}`} from={e.from} durationInFrames={e.frames}><Emoji e={e} y={p.layout.legendaY} W={W} H={H} /></Sequence>
       ))}
       {p.preco && <Sequence from={p.preco.from} durationInFrames={80}><Selo texto={p.preco.texto} y={p.layout.seloY} W={W} /></Sequence>}
+      {p.preco && <Sequence from={p.preco.from + 3} durationInFrames={48}><Confete y={p.layout.seloY} W={W} H={H} /></Sequence>}
+      {(p.selos ?? []).map((s, i) => (
+        <Sequence key={`s${i}`} from={s.from} durationInFrames={s.frames}><SeloConfianca s={s} y={p.layout.seloY + 0.09} W={W} H={H} /></Sequence>
+      ))}
       {p.fecho ? <Sequence from={p.fecho.from}><FechoAnimado fecho={p.fecho} /></Sequence>
                : <Sequence from={p.cta.from}><Cta texto={p.cta.texto} y={p.layout.ctaY} W={W} /></Sequence>}
 
       <Audio src={staticFile(p.narracao)} />
       {p.musica && (
-        <Audio src={staticFile(p.musica.src)} loop
+        <Audio src={staticFile(p.musica.src)} loop={!p.musica.esculpida}
                volume={(f) => {
-                 // a musica abaixa enquanto a voz fala (ducking) e some no fim
-                 const falando = p.fala.some(([a, b]) => f >= a - 4 && f <= b + 4);
+                 // recortada: o meio ja' cede a voz no proprio arquivo (sem abaixar a trilha inteira);
+                 // senao, a musica abaixa enquanto a voz fala (ducking antigo). Some no fim.
+                 const falando = !p.musica!.esculpida && p.fala.some(([a, b]) => f >= a - 4 && f <= b + 4);
                  const fim = interpolate(f, [p.totalFrames - 25, p.totalFrames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
                  return p.musica!.volume * (falando ? 0.55 : 1) * fim;
                }} />

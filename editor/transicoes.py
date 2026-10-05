@@ -47,6 +47,23 @@ CATALOGO = {
 }
 CARTOON = ("iris", "pop_elastico", "boing", "balanco", "giro_cartoon")
 
+# ── CORTE NA CURVA (2026-10-05; "cut the curve" do HyperFrames, Apache-2.0) ──
+# A cena velha ACELERA para o lado (power4.in, ~12% da tela + borrao de movimento), o corte cai no
+# pico da velocidade e a nova chega do mesmo lado DESACELERANDO (power4.out): velocidade casada dos
+# dois lados do corte. E' a transicao "padrao" do vocabulario de cada video.
+CATALOGO["corte_curva"] = {"xfade": ["smoothleft"], "dur": 0.24, "fx": [("blur_h", 0.12)], "sfx": "transicao"}
+PESO_PADRAO = {"corte_curva": 2.0}
+
+# ⭐ A CORRENTE (motion-doctrine do HyperFrames): o video inteiro anda numa direcao so'. Antes cada
+#    transicao sorteava o lado e uma ia para a esquerda e a seguinte para a direita ("pingue-pongue",
+#    le-se como erro). A direcao vertical fica reservada para "revelacao" (sobe).
+CORRENTE = {
+    "esquerda": {"chicote_h": "smoothleft", "deslize": "slideleft", "cortina": "coverleft", "revelar": "revealleft",
+                 "abre": "horzopen", "chicote_v": "smoothup", "corte_curva": "smoothleft"},
+    "direita": {"chicote_h": "smoothright", "deslize": "slideright", "cortina": "coverright", "revelar": "revealright",
+                "abre": "horzopen", "chicote_v": "smoothup", "corte_curva": "smoothright"},
+}
+
 EIXO = {"slideleft": "blur_h", "slideright": "blur_h", "slideup": "blur_v", "slidedown": "blur_v"}
 
 
@@ -55,20 +72,40 @@ def sortear(cortes, cfg_t, sem):
     seguidas; o resto e' corte seco (1 quadro). `pool` (config) restringe os nomes usados."""
     rng = random.Random(sem ^ 0x5EED)
     pool = [n for n in (cfg_t.get("pool") or list(CATALOGO)) if n in CATALOGO]
+    pesos = dict(PESO_PADRAO, **(cfg_t.get("pesos") or {}))
+    corrente = cfg_t.get("corrente") or "esquerda"
+    sinal = rng.choice((-1, 1))                     # giros e balancos: o MESMO sentido no video todo
+    # ⭐ VOCABULARIO: poucas transicoes por video, repetidas (o "corte na curva" + N do pool por peso).
+    #    Variedade ENTRE os videos; consistencia DENTRO de cada um.
+    n_vocab = int(cfg_t.get("vocabulario", 4))
+    if n_vocab and len(pool) > n_vocab:
+        resto = [n for n in pool if n != "corte_curva"]
+        vocab = ["corte_curva"] if "corte_curva" in pool else []
+        # ⛔ 2026-10-05: sorteando so' por peso, um video da Biblia saiu sem NENHUMA transicao cartoon.
+        #    As FAVORITAS da campanha (peso > 1,5 nos ajustes) garantem 2 vagas do vocabulario.
+        fav = [n for n in resto if float((cfg_t.get("pesos") or {}).get(n, 1.0)) > 1.5]
+        for _ in range(min(2, len(fav), n_vocab - len(vocab))):
+            n = rng.choices(fav, weights=[float(pesos.get(x, 1.0)) for x in fav])[0]
+            vocab.append(n); fav.remove(n); resto.remove(n)
+        while len(vocab) < n_vocab and resto:
+            n = rng.choices(resto, weights=[float(pesos.get(x, 1.0)) ** 1.5 for x in resto])[0]
+            vocab.append(n); resto.remove(n)
+        pool = vocab
     out, ultimo = [], None
     for k, c in enumerate(cortes):
         if not (rng.random() < float(cfg_t.get("proporcao", 0.6)) or k == 0):
             out.append({"t": round(c, 3), "tipo": "seco", "xfade": "fade", "dur": float(cfg_t.get("duro_s", 0.034)), "fx": [], "sfx": None})
             continue
-        opcoes = [n for n in pool if n != ultimo] or pool
-        pesos = cfg_t.get("pesos") or {}
+        opcoes = [n for n in pool if n != ultimo or n == "corte_curva"] or pool
         nome = rng.choices(opcoes, weights=[float(pesos.get(n, 1.0)) for n in opcoes])[0]; ultimo = nome
-        spec = CATALOGO[nome]; xf = rng.choice(spec["xfade"])
+        spec = CATALOGO[nome]
+        xf = CORRENTE.get(corrente, {}).get(nome) or rng.choice(spec["xfade"])
         fx = [list(f) for f in spec["fx"]]
         for f in fx:
             if f[0] == "blur_eixo": f[0] = EIXO.get(xf, "blur_h")
-            if f[0] in ("giro", "balanco"): f[1] = f[1] * rng.choice((-1, 1))
-        out.append({"t": round(c, 3), "tipo": nome, "xfade": xf, "dur": spec["dur"], "fx": fx, "sfx": spec["sfx"]})
+            if f[0] in ("giro", "balanco"): f[1] = f[1] * sinal
+        out.append({"t": round(c, 3), "tipo": nome, "xfade": xf, "dur": spec["dur"], "fx": fx, "sfx": spec["sfx"],
+                    "sinal": sinal, "corrente": corrente})
     return out
 
 

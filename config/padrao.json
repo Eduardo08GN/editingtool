@@ -35,6 +35,12 @@
    "espaco_s": 5.0,
    "dur_s": 1.7
   },
+  "selos": {
+   "ativo": true,
+   "max": 3,
+   "espaco_s": 3.0,
+   "dur_s": 2.4
+  },
   "camera_lenta": {
    "ativo": true,
    "max_por_video": 2,
@@ -79,6 +85,12 @@
   "sfx_espaco_min_s": 1.8,
   "musica": "auto",
   "musica_db": -23,
+  "recorte_voz": {
+   "ativo": true,
+   "de_hz": 300,
+   "ate_hz": 3800,
+   "forca": 10
+  },
   "musica_duck_db": -8
  },
  "whisper": {

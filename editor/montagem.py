@@ -14,7 +14,7 @@ ffmpeg.
 """
 import os, random, re, unicodedata, zlib
 
-from . import config, emojis as _emo, sfx as _sfx
+from . import config, emojis as _emo, selos as _selos, sfx as _sfx
 
 PONTUACAO_FIM = re.compile(r"[.,!?;:]$")
 
@@ -302,6 +302,7 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
         "id": cri["id"], "semente": sem, "total": total, "base": os.path.abspath(base),
         "modelo": modelo, "layout": M, "titulo": titulo, "bpm": bpm,
         "emojis": _emo.escolher(palavras, t_cta, cfg["video"].get("emojis"), sem),
+        "selos": _selos.detectar(palavras, t_cta, cfg["video"].get("selos")),
         "planos": planos, "cortes": [round(c, 3) for c in cortes],
         "cartoes": cards, "cta": {"t": round(t_cta, 3), "texto": cfg["cta"]["texto"]},
         "preco": ({"t": round(preco[0], 3), "texto": preco[1]} if preco else None),

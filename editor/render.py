@@ -140,7 +140,16 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
     fil.append(f"[{ia}:a]aresample=48000,aformat=channel_layouts=stereo,apad=whole_dur={total:.3f}[nar0]")
     mix = ["[nar]"]
     mus = plano.get("musica")
-    if mus and A.get("musica"):
+    from . import mixagem
+    esc = mixagem.esculpir(mus["arquivo"], narracao_wav, total, A) if (mus and A.get("musica")) else None
+    if esc:                                   # ⭐ musica recortada sob a voz (ja' com volume e fades)
+        fil[-1] = fil[-1].replace("[nar0]", "[nar]")      # a voz nao precisa mais alimentar um sidechain aqui
+        im = ia + 1
+        entradas += ["-i", esc]
+        fil.append(f"[{im}:a]aresample=48000,aformat=channel_layouts=stereo,atrim=0:{total:.3f},asetpts=PTS-STARTPTS[mus]")
+        mix.append("[mus]")
+        prox_in = im + 1
+    elif mus and A.get("musica"):
         im = ia + 1
         entradas += ["-stream_loop", "-1", "-i", mus["arquivo"]]
         fil.append("[nar0]asplit=2[nar][narsc]")

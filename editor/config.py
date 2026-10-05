@@ -90,6 +90,7 @@ def aplicar_turbo(cfg):
     v["motion_graphics"] = {"gancho": True, "fecho": True}
     v["motion_blur"] = dict(v.get("motion_blur") or {}, ativo=True)
     v["emojis"] = dict(v.get("emojis") or {}, ativo=True)
+    v["selos"] = dict(v.get("selos") or {}, ativo=True)
     v["camera_lenta"] = dict(v.get("camera_lenta") or {}, ativo=True)
     v["cortar_na_batida"] = True
     cfg["audio"]["sfx"] = True

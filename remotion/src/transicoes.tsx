@@ -73,6 +73,32 @@ const Desfoque: React.FC<P> = ({ children, presentationDirection: d, presentatio
   return <Camada style={{ opacity: d === "entering" ? p : 1, filter: `blur(${b}px)` }}>{children}</Camada>;
 };
 
+// CORTE NA CURVA ("cut the curve", HyperFrames/Apache-2.0): a velha acelera para o lado (power4.in, ~12% da
+// tela, borrao subindo ate' 18px), o corte cai no PICO da velocidade, e a nova chega do mesmo lado
+// desacelerando (power4.out): as duas metades de um power4.inOut, entao a velocidade casa no corte.
+// Nunca as duas visiveis ao mesmo tempo. A faixa que o deslocamento expoe mostra a propria cena
+// desfocada (nada de borda preta) e le-se como borrao de movimento.
+const CorteCurva: React.FC<P> = ({ children, presentationDirection: d, presentationProgress: p, passedProps }) => {
+  const sinal = passedProps.sinal ?? 1;              // 1 = a corrente vai para a esquerda
+  const viagem = 12, borraoMax = 18;
+  let x = 0, b = 0;
+  if (d === "exiting") {
+    if (p >= 0.5) return null;
+    const e = Math.pow(p / 0.5, 4);
+    x = -sinal * viagem * e; b = borraoMax * e;
+  } else {
+    if (p < 0.5) return null;
+    const q = (p - 0.5) / 0.5; const e = 1 - Math.pow(1 - q, 4);
+    x = sinal * viagem * (1 - e); b = borraoMax * (1 - e);
+  }
+  return (
+    <AbsoluteFill>
+      <AbsoluteFill style={{ transform: "scale(1.3)", filter: "blur(40px)" }}>{children}</AbsoluteFill>
+      <Camada style={{ transform: `translateX(${x}%)`, filter: `blur(${b}px)` }}>{children}</Camada>
+    </AbsoluteFill>
+  );
+};
+
 const custom = (c: React.FC<P>, props: Estilo = {}): TransitionPresentation<Estilo> => ({ component: c, props });
 
 const DIR: Record<string, "from-left" | "from-right" | "from-top" | "from-bottom"> = {
@@ -83,8 +109,9 @@ const DIR: Record<string, "from-left" | "from-right" | "from-top" | "from-bottom
 };
 
 // o pool do Python (editor/transicoes.py) -> uma apresentacao do Remotion
-export function apresentacao(tipo: string, xfade: string, w: number, h: number, i: number): TransitionPresentation<any> {
-  const sinal = (i % 2 ? -1 : 1) as 1 | -1;
+export function apresentacao(tipo: string, xfade: string, w: number, h: number, i: number, sinalDoPlano?: number): TransitionPresentation<any> {
+  // ⭐ o sentido vem do plano (o MESMO no video todo); antes alternava a cada corte (pingue-pongue)
+  const sinal = ((sinalDoPlano ?? (i % 2 ? -1 : 1)) < 0 ? -1 : 1) as 1 | -1;
   switch (tipo) {
     case "iris": case "circulo": return iris({ width: w, height: h });
     case "pop_elastico": case "zoom_punch": return custom(Pop);
@@ -98,6 +125,7 @@ export function apresentacao(tipo: string, xfade: string, w: number, h: number, 
     case "radial": return clockWipe({ width: w, height: h });
     case "flash": case "luz": return custom(Flash);
     case "desfoque": return custom(Desfoque);
+    case "corte_curva": return custom(CorteCurva, { sinal: xfade === "smoothright" ? -1 : 1 });
     default: return fade();
   }
 }
