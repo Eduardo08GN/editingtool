@@ -49,6 +49,90 @@ def janela(arquivo, max_s):
     return round(pk - entrada, 3), round(entrada + cauda, 3), entrada
 
 
+FREQS = os.path.join(config.CACHE_DIR, "sfx_freqs.json")
+PROC = os.path.join(config.CACHE_DIR, "sfx_proc")
+ESCALA = {"maior": [0, 2, 4, 5, 7, 9, 11], "menor": [0, 2, 3, 5, 7, 8, 10]}
+AFINAVEIS = {"pop", "brinquedo", "fofo"}        # sons com nota clara; whoosh/impacto/revelar nao se afinam
+
+
+def freq_dominante(arquivo):
+    """Frequencia (Hz) mais forte logo depois do pico do som (o "tom" dele), com cache."""
+    import numpy as np
+    st = os.stat(arquivo); chave = f"{os.path.abspath(arquivo)}|{st.st_size}|{int(st.st_mtime)}"
+    cache = config.ler_json(FREQS, {}) or {}
+    if chave in cache: return cache[chave]
+    raw = config.run([config.FFMPEG, "-v", "error", "-i", arquivo, "-t", "4", "-ac", "1", "-ar", "22050", "-f", "f32le", "-"],
+                     capture_output=True).stdout
+    a = np.frombuffer(raw, np.float32)
+    ini = int(pico(arquivo) * 22050); trecho = a[ini: ini + 2048]
+    f = 0.0
+    if len(trecho) > 256:
+        esp = np.abs(np.fft.rfft(trecho * np.hanning(len(trecho))))
+        fr = np.fft.rfftfreq(len(trecho), 1 / 22050)
+        ok = (fr > 150) & (fr < 4000)
+        if ok.any(): f = float(fr[ok][np.argmax(esp[ok])])
+    cache[chave] = round(f, 1); config.escrever_json(FREQS, cache)
+    return cache[chave]
+
+
+def semitons_para_escala(f0, tom, grau=0):
+    """Quantos semitons levam f0 ate' a nota da escala (grau 0 = a mais perto; 1, 2... = notas acima na escala)."""
+    import math
+    if not f0 or not tom: return 0.0
+    tonica, modo = tom
+    nota = 12 * math.log2(f0 / 261.63) - tonica                 # semitons acima da tonica (Do4 = 261,63 Hz)
+    graus = ESCALA.get(modo, ESCALA["maior"])
+    cand = [o * 12 + g for o in range(-3, 4) for g in graus]
+    perto = min(cand, key=lambda c: abs(c - nota))
+    i = cand.index(perto) + grau * 2                            # grau 1 = uma terca acima (2 notas da escala)
+    alvo = cand[min(max(i, 0), len(cand) - 1)]
+    s = alvo - nota
+    while s > 6: s -= 12                                        # nunca mais de meia oitava: soaria outro som
+    while s < -6: s += 12
+    return round(s, 2)
+
+
+def processar(arquivo, fator):
+    """O som tocado `fator` vezes mais rapido (e agudo). 1.0 = o original. Cache em .cache/sfx_proc."""
+    if abs(fator - 1.0) < 0.01: return arquivo
+    import hashlib
+    st = os.stat(arquivo)
+    chave = hashlib.sha1(f"{os.path.abspath(arquivo)}|{st.st_size}|{int(st.st_mtime)}|{fator:.4f}".encode()).hexdigest()[:16]
+    dest = os.path.join(PROC, f"{chave}.wav")
+    if not os.path.exists(dest):
+        os.makedirs(PROC, exist_ok=True)
+        r = config.ffmpeg(["-i", arquivo, "-af", f"aresample=48000,asetrate={48000 * fator:.1f},aresample=48000", "-ac", "2", dest])
+        if r.returncode != 0: return arquivo
+    return dest
+
+
+def som(arq, meta, evento, categoria, motivo, base_db, fator=1.0):
+    """Uma entrada de SFX com o PICO no evento, ja' com o fator (afinacao/velocidade) aplicado."""
+    ini_arq, dur, entrada = janela(arq, meta.get("max_s", 1.0))
+    if abs(fator - 1.0) >= 0.01:
+        arq = processar(arq, fator)
+        ini_arq, dur, entrada = ini_arq / fator, dur / fator, entrada / fator
+    inicio = evento - entrada
+    if inicio < 0: ini_arq, dur, inicio = ini_arq - inicio, dur + inicio, 0.0
+    return {"t": round(inicio, 3), "evento": round(evento, 3), "arquivo": arq, "inicio_arquivo": round(ini_arq, 3),
+            "db": base_db + float(meta.get("db", 0)), "max_s": round(max(0.1, dur), 3), "categoria": categoria,
+            "motivo": motivo, "fator": round(fator, 3)}
+
+
+def avulso(categoria, evento, motivo, cfg_audio, semente, tom=None, grau=0, db_extra=0.0):
+    """Um som de uma categoria do pool num instante (para o gancho e o fecho animados)."""
+    import random
+    disp = disponiveis()
+    lst = disp.get(categoria) or []
+    if not lst: return None
+    arq, meta = random.Random(semente).choice(lst)
+    fator = 1.0
+    if categoria in AFINAVEIS and tom:
+        fator = 2 ** (semitons_para_escala(freq_dominante(arq), tom, grau) / 12)
+    e = som(arq, meta, evento, categoria, motivo, float(cfg_audio.get("sfx_db", -11)) + db_extra, fator)
+    return e
+
+
 def catalogo():
     return json.load(io.open(CATALOGO, encoding="utf-8"))
 
@@ -72,7 +156,7 @@ def cat_or(cat):
     return cat if cat is not None else catalogo()
 
 
-def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None):
+def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None, tom=None):
     """[{'t','arquivo','db','max_s','motivo'}] ordenado por tempo."""
     cat = cat_or(cat)
     disp = disponiveis(cat)
@@ -85,7 +169,7 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
         lst = disp.get(categoria) or []
         return rng.choice(lst) if lst else None
 
-    cand = []      # (prioridade, t, categoria, motivo)
+    cand = []      # (prioridade, t, categoria, motivo[, duracao do movimento])
     for c in cat.get("abertura") or []:
         if c in disp: cand.append((0, 0.0, c, "abertura")); break
     i_cta = indice_cta(palavras)
@@ -107,25 +191,32 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
         for k, tr in enumerate(efeitos):
             c = tr["sfx"] if tr["sfx"] in disp else cat.get("cortes")
             if c in disp:      # ⭐ transicao animada tem prioridade sobre palavra-chave (2026-10-03)
-                cand.append((2, tr["t"], c, f"transicao {tr['tipo']}"))
+                cand.append((2, tr["t"], c, f"transicao {tr['tipo']}", float(tr.get("dur", 0.3))))
     elif cat.get("cortes") in disp:
         for k, tc in enumerate(cortes):
             if k % 3 == 0 and 0.5 < tc < fim_fala - 0.3:
                 cand.append((3, tc, cat["cortes"], "corte"))
 
     aceitos = []
-    for pri, t, c, motivo in sorted(cand, key=lambda x: (x[0], x[1])):
+    vezes = {}
+    for item in sorted(cand, key=lambda x: (x[0], x[1])):
+        pri, t, c, motivo = item[:4]
+        mov = item[4] if len(item) > 4 else None
         if any(abs(t - a["evento"]) < espaco for a in aceitos): continue      # respiro medido entre EVENTOS
         esc = pega(c)
         if not esc: continue
         arq, meta = esc
-        # `t` era o evento; agora o som COMECA antes, para o pico cair nele
-        ini_arq, dur, entrada = janela(arq, meta.get("max_s", 1.0))
-        inicio = t - entrada
-        if inicio < 0: ini_arq, dur, inicio = ini_arq - inicio, dur + inicio, 0.0     # abertura em t=0: corta o embalo
-        aceitos.append({"t": round(inicio, 3), "evento": round(t, 3), "arquivo": arq, "inicio_arquivo": round(ini_arq, 3),
-                        "db": base_db + float(meta.get("db", 0)), "max_s": round(max(0.1, dur), 3),
-                        "categoria": c, "motivo": motivo})
+        k = vezes.get(c, 0); vezes[c] = k + 1
+        # ⭐ (motion-graphics-skills) 1) som com nota afinado na musica; repeticoes sobem na escala
+        #    (tonica, terca, quinta); 2) whoosh com o tamanho do movimento; 3) outros variam um pouco
+        if c in AFINAVEIS and tom:
+            fator = 2 ** (semitons_para_escala(freq_dominante(arq), tom, k % 3) / 12)
+        elif mov and c == "transicao":                     # so' whoosh se estica/encolhe
+            _i, _d, entrada0 = janela(arq, meta.get("max_s", 1.0))
+            fator = min(1.45, max(0.85, entrada0 / max(0.15, mov * 1.6)))
+        else:
+            fator = 2 ** ([0, 1, -1, 2, -2][k % 5] / 12)
+        aceitos.append(som(arq, meta, t, c, motivo, base_db, fator))
     return sorted(aceitos, key=lambda a: a["t"])
 
 

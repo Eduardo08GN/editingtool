@@ -320,3 +320,13 @@ select.campo { appearance: auto; }
   .app.turbo::before, .app.turbo::after, .pilot.pilot-turbo, .raio, .app.turbo h1 em, .app.turbo .bar span { animation: none !important; }
   .recursos li { opacity: 1; animation: none !important; }
 }
+
+/* ⭐ QA de entrega + folha de contato */
+.qa-entrega { display: grid; gap: 10px; padding: 12px 14px; border-radius: var(--ow-radius); border: 1px solid var(--ow-sun); background: var(--ow-sun-soft); }
+.qa-entrega.ok { border-color: var(--ow-line); background: rgba(255, 255, 255, .04); }
+.qa-topo { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 12px; }
+.qa-topo .label { display: inline-flex; align-items: center; gap: 6px; }
+.qa-entrega ul { margin: 0; padding-left: 18px; color: var(--ow-text-2); font-size: var(--ow-fs-small); }
+.qa-entrega li.falha { color: var(--ow-sun); font-weight: 600; }
+.qa-entrega .folha { width: 100%; height: auto; border-radius: calc(var(--ow-radius) - 2px); display: block; }
+.qa-entrega .btn { justify-self: start; }

@@ -20,14 +20,15 @@ export interface Estado {
 export interface Criativo {
   id: string; publico_n: number; publico: string; angulo: string; alvo_s: number; preco: boolean; copy: string;
   etapa: Etapa; entregue: string | null; duracao: number | null; avisos: string[];
-  musica: string | null; voz: number | null; sfx: number; modelo: string | null; motor: string | null; zona_segura: string[]; bpm: number | null; motion: string[]; turbo: boolean; transicoes: string[];
+  musica: string | null; voz: number | null; sfx: number; modelo: string | null; motor: string | null; zona_segura: string[]; bpm: number | null; motion: string[];
+  entrega: { falhas: string[]; avisos: string[]; lufs: number | null; pico: number | null; folha: string | null } | null; whatsapp: string | null; turbo: boolean; transicoes: string[];
   perfil_musica: string; pasta: string | null;
 }
 
 export interface Campanha {
   nome: string; produto: string; pasta: string; base: string | null; base_ok: boolean; regra: string[];
   turbo_recursos: { id: string; nome: string; ativo: boolean; nota: string }[];
-  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; publicar?: { repo: string; pasta: string; auto?: boolean } | null;
+  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; revisao_dir: string | null; publicar?: { repo: string; pasta: string; auto?: boolean } | null;
   efetivo: { turbo: boolean; voz: string; velocidade: number; modelo: string; motor: string; motion_graphics: { gancho?: boolean; fecho?: boolean }; musica: string; sfx: boolean; legenda_estilo: number;
              transicoes: { proporcao?: number; pesos?: Record<string, number> } };
 }

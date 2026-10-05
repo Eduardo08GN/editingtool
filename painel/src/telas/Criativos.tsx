@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FolderOpen, Mic, RotateCcw, ScanLine } from "lucide-react";
+import { ArrowLeft, FolderOpen, Mic, RotateCcw, ScanLine, ShieldCheck, Smartphone } from "lucide-react";
 import { enviar, midia, type Criativo } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, Selo, useAcao } from "../componentes/base";
@@ -15,6 +15,30 @@ function ZonaSegura() {
       <div className="z-topo"><span>topo · perfil e barra (14%)</span></div>
       <div className="z-base"><span>base · legenda do post e botão (35%)</span></div>
       <div className="z-esq" /><div className="z-dir" />
+    </div>
+  );
+}
+
+// ⭐ QA de entrega: o que a passada final pegou no MP4 (congelado, preto, pipoco, silencio, volume, formato)
+function ConferenciaEntrega({ c }: { c: Criativo }) {
+  const e = c.entrega!;
+  const ok = e.falhas.length === 0;
+  return (
+    <div className={`qa-entrega${ok ? " ok" : ""}`}>
+      <div className="qa-topo">
+        <span className="label"><ShieldCheck size={14} aria-hidden /> Conferência de entrega</span>
+        <strong>{ok ? (e.avisos.length ? "passou, com observações" : "passou") : `${e.falhas.length} problema(s)`}</strong>
+        {e.lufs !== null && <span className="meta">{e.lufs.toFixed(1)} LUFS{e.pico !== null ? ` · pico ${e.pico.toFixed(1)} dB` : ""}</span>}
+      </div>
+      {(e.falhas.length > 0 || e.avisos.length > 0) && (
+        <ul>{e.falhas.map((f, i) => <li key={`f${i}`} className="falha">{f}</li>)}{e.avisos.map((a, i) => <li key={`a${i}`}>{a}</li>)}</ul>
+      )}
+      {e.folha && <img className="folha" src={midia(e.folha) + `&v=${c.duracao ?? 0}`} alt={`12 quadros do criativo ${c.id}, do início ao fim`} loading="lazy" />}
+      {c.whatsapp && (
+        <a className="btn btn-ghost btn-sm" href={midia(c.whatsapp)} download target="_blank" rel="noreferrer">
+          <Smartphone size={14} aria-hidden />Versão leve para WhatsApp
+        </a>
+      )}
     </div>
   );
 }
@@ -69,6 +93,7 @@ function Detalhe({ c, ctx }: { c: Criativo; ctx: Ctx }) {
             {c.modelo && <span className="tag tag-neutra">modelo {c.modelo}</span>}
             {c.motor && <span className="tag tag-neutra">{c.motor === "remotion" ? "Remotion" : "motor atual"}</span>}
             {c.motion.length > 0 && <span className="tag tag-neutra">motion: {c.motion.join(" + ")}</span>}</div>
+          {c.entrega && <ConferenciaEntrega c={c} />}
           {c.avisos.length > 0 && <ul className="aviso-lista">{c.avisos.map((a, i) => <li key={i}>{a}</li>)}</ul>}
           {c.zona_segura.length > 0 && (
             <div className="info-zona"><span className="label">Zona segura (informativo)</span>

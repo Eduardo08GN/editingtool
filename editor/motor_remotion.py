@@ -75,7 +75,40 @@ def _db(v):
     return round(10 ** (float(v) / 20.0), 4)
 
 
-def motion_graphics(props, plano, produto, gancho=True, fecho=True):
+def _ticks(numero, frames_conta, pub, tom=None):
+    """WAV com os "ticks" do contador 0..N: um por quadro em que o numero muda (mesma curva do desenho:
+    ease-out cubico em `frames_conta` quadros), subindo de altura. Sintetizado aqui, sem asset de terceiros."""
+    import math, wave, numpy as np
+    sr = 48000
+    alvo = int(numero)
+    mudancas, ant = [], -1
+    for f in range(frames_conta + 1):
+        p = min(1.0, f / frames_conta); v = round(alvo * (1 - (1 - p) ** 3))
+        if v != ant: mudancas.append(f); ant = v
+    base = 880.0 * (2 ** (((tom[0] if tom else 9) - 9) / 12))     # parte da tonica da musica (La = 0 de desvio)
+    dur = (frames_conta + 4) / FPS
+    y = np.zeros(int(sr * dur), np.float32)
+    n = len(mudancas)
+    for i, f in enumerate(mudancas):
+        fr = base * (2 ** (1.4 * i / max(1, n - 1)))             # sobe ~1,4 oitava ao longo da contagem
+        t = np.arange(int(sr * 0.028)) / sr
+        g = np.sin(2 * math.pi * fr * t) * np.exp(-t * 140) + 0.25 * np.random.RandomState(i).randn(len(t)) * np.exp(-t * 400)
+        ini = int(f / FPS * sr); y[ini: ini + len(g)] += (0.55 * g).astype(np.float32)[: len(y) - ini]
+    y = np.clip(y, -1, 1)
+    os.makedirs(os.path.join(pub, "assets"), exist_ok=True)
+    arq = os.path.join(pub, "assets", f"ticks_{alvo}_{frames_conta}.wav")
+    with wave.open(arq, "wb") as w:
+        w.setnchannels(1); w.setsampwidth(2); w.setframerate(sr); w.writeframes((y * 32767).astype("<i2").tobytes())
+    return f"assets/{os.path.basename(arq)}"
+
+
+def _som_props(e, pub):
+    f = lambda t: int(round(float(t) * FPS))
+    return {"src": _asset(e["arquivo"], pub), "from": f(e["t"]), "frames": max(1, f(e["max_s"])),
+            "trim": f(e.get("inicio_arquivo", 0)), "volume": min(1.0, _db(e["db"]))}
+
+
+def motion_graphics(props, plano, produto, gancho=True, fecho=True, pub=None, cfg_audio=None):
     """Gancho animado (contador 0..N + rotulo que vira o titulo) e cartao de fecho (CTA).
     O numero e o rotulo saem do nome do produto: "Biblia do Bebe: 70 Cards Ludicos" -> 70 / CARDS LUDICOS."""
     nome, _, resto = (produto or "").partition(":")
@@ -84,10 +117,28 @@ def motion_graphics(props, plano, produto, gancho=True, fecho=True):
         props["gancho"] = {"numero": m.group(1), "rotulo": m.group(2).strip().upper(), "frames": 54,
                            "tituloY": props["layout"]["tituloY"]}
         if props.get("titulo"): props["titulo"]["from"] = max(props["titulo"]["from"], 54 - 6)   # o titulo nasce da pilula
+        if pub and cfg_audio is not None and cfg_audio.get("sfx", True):
+            # ⭐ sons do gancho: ticks do contador, impacto quando chega no N, whoosh quando a pilula sobe;
+            #    o SFX de "abertura" do plano sai (dois sons no mesmo instante embolam)
+            from . import sfx as _sfx
+            tom = tuple(plano["tom"]) if plano.get("tom") else None
+            props["sfx"] = [s for s in props["sfx"] if s["from"] > 30]
+            props["sfx"].append({"src": _ticks(m.group(1), 22, pub, tom), "from": 0, "frames": 30, "trim": 0, "volume": 0.5})
+            for cat, t, mot, grau in (("pop", 22 / FPS, "gancho chega no numero", 2), ("transicao", (54 - 12) / FPS, "pilula sobe", 0)):
+                e = _sfx.avulso(cat, t, mot, cfg_audio, plano.get("semente", 0) + len(props["sfx"]), tom, grau)
+                if e: props["sfx"].append(_som_props(e, pub))
     if not fecho: return props
     fim = props["cta"]["from"]
     linhas = [l for l in (props["titulo"]["linhas"] if props.get("titulo") else [nome.strip(), resto.strip()]) if l]
     props["fecho"] = {"from": fim, "linhas": [l.upper().rstrip(":") for l in linhas] or ["SAIBA MAIS"], "cta": props["cta"]["texto"]}
+    if pub and cfg_audio is not None and cfg_audio.get("sfx", True):
+        # ⭐ sons do fecho: whoosh quando o video encolhe, pop afinado quando o botao nasce; o pop do CTA sai
+        from . import sfx as _sfx
+        tom = tuple(plano["tom"]) if plano.get("tom") else None
+        props["sfx"] = [s for s in props["sfx"] if abs(s["from"] - fim) > 12]
+        for cat, dt, mot, grau in (("transicao", 0.15, "video vira cartao", 0), ("pop", 16 / FPS, "botao nasce", 1)):
+            e = _sfx.avulso(cat, fim / FPS + dt, mot, cfg_audio, plano.get("semente", 0) + 7 + len(props["sfx"]), tom, grau)
+            if e: props["sfx"].append(_som_props(e, pub))
     props["cards"] = [dict(c, to=min(c["to"], fim)) for c in props["cards"] if c["from"] < fim]
     if props.get("titulo"): props["titulo"]["to"] = min(props["titulo"]["to"], fim)
     return props
@@ -164,7 +215,8 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produt
     os.makedirs(os.path.join(pub, "fonts"), exist_ok=True)
     for n in os.listdir(FONTES): _ligar(os.path.join(FONTES, n), os.path.join(pub, "fonts", n))
     props = montar_props(plano, wav, cfg, pub)
-    if produto is not None and (gancho or fecho): props = motion_graphics(props, plano, produto, gancho, fecho)
+    if produto is not None and (gancho or fecho):
+        props = motion_graphics(props, plano, produto, gancho, fecho, pub=pub, cfg_audio=cfg["audio"])
     arq_props = os.path.join(pasta, "remotion_props.json")
     config.escrever_json(arq_props, props)
     bruto = os.path.join(pasta, "_remotion_bruto.mp4")

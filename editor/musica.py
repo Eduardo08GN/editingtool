@@ -100,3 +100,32 @@ def grade(arquivo, dur_faixa, total):
         out += [base + x for x in t if base + x < total]
         base += float(dur_faixa)
     return bpm, out
+
+
+TONS = os.path.join(config.CACHE_DIR, "tons.json")
+_PERFIL_MAIOR = [6.35, 2.23, 3.48, 2.33, 4.38, 4.09, 2.52, 5.19, 2.39, 3.66, 2.29, 2.88]
+_PERFIL_MENOR = [6.33, 2.68, 3.52, 5.38, 2.60, 3.53, 2.54, 4.75, 3.98, 2.69, 3.34, 3.17]
+
+
+def tom(arquivo):
+    """(tonica 0-11 com 0=Do, "maior"|"menor") da faixa, com cache. Para afinar os SFX na musica."""
+    import tempfile
+    st = os.stat(arquivo); chave = f"{os.path.abspath(arquivo)}|{st.st_size}|{int(st.st_mtime)}"
+    cache = config.ler_json(TONS, {}) or {}
+    if chave in cache: return tuple(cache[chave])
+    import numpy as np, librosa
+    wav = os.path.join(tempfile.gettempdir(), f"edt_tom_{os.getpid()}.wav")
+    config.ffmpeg(["-i", arquivo, "-t", "90", "-ac", "1", "-ar", "22050", wav])
+    try:
+        y, sr = librosa.load(wav, sr=22050)
+        croma = librosa.feature.chroma_cqt(y=y, sr=sr).mean(axis=1)
+    finally:
+        try: os.remove(wav)
+        except OSError: pass
+    melhor = (-9, 0, "maior")
+    for t in range(12):
+        for modo, perfil in (("maior", _PERFIL_MAIOR), ("menor", _PERFIL_MENOR)):
+            r = float(np.corrcoef(croma, np.roll(perfil, t))[0, 1])
+            if r > melhor[0]: melhor = (r, t, modo)
+    cache[chave] = [melhor[1], melhor[2]]; config.escrever_json(TONS, cache)
+    return melhor[1], melhor[2]

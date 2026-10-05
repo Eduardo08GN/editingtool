@@ -9,7 +9,7 @@ Entregues: `campanhas/<nome>/saida/_entregues/P<pub>_<id>_<angulo>_<dur>s.mp4` +
 import hashlib, json, os, shutil, threading, traceback
 from concurrent.futures import ThreadPoolExecutor
 
-from . import alinhar, campanha as _camp, config, montagem, musica, player, render, tts
+from . import alinhar, campanha as _camp, config, formato, montagem, musica, player, qa_entrega, render, tts
 
 _LOCK_WHISPER = threading.Lock()
 
@@ -123,14 +123,23 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    from . import formato
+    # ⭐ copia LEVE para revisar pelo WhatsApp (o WhatsApp recomprime; a entrega cheia vai para o repo)
+    zap = None
+    try:
+        zap = qa_entrega.versao_whatsapp(final, os.path.join(camp["_pasta"], "saida", "_revisao_whatsapp",
+                                                             f"P{cri['publico_n']}-{config.slug(cri['publico'], 30)}", nome))
+    except Exception as e:                              # noqa: BLE001 — a versao leve nunca derruba a entrega
+        log(f"[{cri['id']}] versao WhatsApp falhou: {e}")
     formato.garantir(final, log)
+    # ⭐ QA de entrega (congelado, preto, pipoco, silencio, volume, formato) + folha de contato
+    entrega = qa_entrega.conferir(final, pasta, float(cfg["audio"].get("lufs", -14)), log)
     qa = {"hash": h, "narracao_take": take, "voz_arrastada": ruins, "formato": formato.inspecionar(final)["pix_fmt"],
           "motor": r.get("motor", "ffmpeg"), "motion": r.get("motion", []), "turbo": bool(cfg.get("turbo")), "id": cri["id"], "publico": cri["publico"], "angulo": cri["angulo"], "alvo_s": cri["alvo_s"],
           "preco": cri["preco"], "copy": cri["copy"], "duracao": r["duracao"], "tts": info, "alinhamento": rel,
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
           "avisos": conferir(cri, rel, info, r["duracao"]) + ([f"voz arrastada em {', '.join(w for w, _a, _d in ruins)}: use Nova narracao"]
-                                                               if ruins else []), "zona_segura": zona_segura(plano, cfg),
+                                                               if ruins else []) + entrega["falhas"],
+          "entrega": entrega, "whatsapp": zap, "zona_segura": zona_segura(plano, cfg),
           "bpm": plano.get("bpm"), "final": final, "entregue": destino}
     config.escrever_json(os.path.join(pasta, "qa.json"), qa)
     shutil.rmtree(os.path.join(pasta, "_tmp"), ignore_errors=True)

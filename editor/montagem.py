@@ -246,6 +246,13 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
         except Exception as e:                               # noqa: BLE001 — sem batida, corta so' pela fala
             print(f"   batida: nao consegui analisar a musica ({e}); cortando so' pela fala")
     planos, cortes = linha_do_tempo(total, [c["t0"] for c in cards], an, cfg["video"], sem, grade_bt)
+    tom_mus = None
+    if musica_escolhida:
+        try:
+            from . import musica as _mus2
+            tom_mus = _mus2.tom(musica_escolhida["arquivo"])
+        except Exception as e:                               # noqa: BLE001 — sem tom, os sons nao se afinam
+            print(f"   tom: nao consegui analisar a musica ({e})")
     t_cta = palavras[i_cta][1] if i_cta is not None else max(0.0, total - 3.0)
     preco = momento_preco(palavras, cfg["preco"]) if cri.get("preco") else None
     trans = transicoes(cortes, cfg["transicoes"], sem) if cfg.get("transicoes") else []
@@ -267,6 +274,6 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
         "cartoes": cards, "cta": {"t": round(t_cta, 3), "texto": cfg["cta"]["texto"]},
         "preco": ({"t": round(preco[0], 3), "texto": preco[1]} if preco else None),
         "transicoes": trans,
-        "sfx": _sfx.plano(palavras, cortes, total, cfg["audio"], sem, transicoes=trans),
+        "sfx": _sfx.plano(palavras, cortes, total, cfg["audio"], sem, transicoes=trans, tom=tom_mus), "tom": tom_mus,
         "musica": musica_escolhida,
     }

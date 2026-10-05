@@ -82,6 +82,20 @@ def test_razao_em_texto_longo():
     _, rel = alinhar.casar_texto(ouvidas, copy)
     assert rel["razao"] > 0.9, rel
 
+
+def test_afinar_sfx_na_escala():
+    """Pop afinado no tom da musica: cai numa nota da escala, nunca mais de meia oitava de distancia."""
+    import math
+    from editor import sfx
+    for tom in [(0, "maior"), (9, "menor"), (5, "maior")]:
+        for f0 in (180.0, 440.0, 753.7, 2304.1):
+            for grau in (0, 1, 2):
+                s = sfx.semitons_para_escala(f0, tom, grau)
+                assert -6 <= s <= 6, (f0, tom, grau, s)
+                nota = round(12 * math.log2(f0 / 261.63) + s - tom[0]) % 12
+                assert nota in sfx.ESCALA[tom[1]], (f0, tom, grau, nota)
+    assert sfx.semitons_para_escala(0, (0, "maior")) == 0.0 and sfx.semitons_para_escala(440, None) == 0.0
+
 if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)
