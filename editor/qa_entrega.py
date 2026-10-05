@@ -83,14 +83,3 @@ def conferir(arq, pasta, lufs_alvo=-14.0, log=None):
     return {"falhas": falhas, "avisos": avisos, "folha": folha if os.path.exists(folha) else None,
             "lufs": lufs, "pico": pico}
 
-
-def versao_whatsapp(arq, destino):
-    """Copia LEVE para revisar pelo WhatsApp (720p, ~2,5 Mbps, formato de celular). Nunca vai para o repo."""
-    os.makedirs(os.path.dirname(destino), exist_ok=True)
-    r = config.ffmpeg(["-i", arq, "-vf", "scale=720:1280:flags=lanczos,format=yuv420p",
-                       "-c:v", "libx264", "-preset", "medium", "-crf", "23", "-maxrate", "2500k", "-bufsize", "5000k",
-                       "-profile:v", "main", "-level", "3.1", "-pix_fmt", "yuv420p", "-color_range", "tv", "-g", "60",
-                       "-c:a", "aac", "-b:a", "128k", "-ar", "44100", "-movflags", "+faststart", destino])
-    if r.returncode != 0 or not os.path.exists(destino):
-        raise RuntimeError("versao leve falhou: " + (r.stderr or "")[-300:])
-    return destino

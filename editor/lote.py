@@ -123,13 +123,6 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
     for velho in os.listdir(entregues):           # entrega anterior do mesmo criativo (outra duracao no nome)
         if velho.startswith(prefixo) and velho != nome: os.remove(os.path.join(entregues, velho))
     shutil.copyfile(final, destino)
-    # ⭐ copia LEVE para revisar pelo WhatsApp (o WhatsApp recomprime; a entrega cheia vai para o repo)
-    zap = None
-    try:
-        zap = qa_entrega.versao_whatsapp(final, os.path.join(camp["_pasta"], "saida", "_revisao_whatsapp",
-                                                             f"P{cri['publico_n']}-{config.slug(cri['publico'], 30)}", nome))
-    except Exception as e:                              # noqa: BLE001 — a versao leve nunca derruba a entrega
-        log(f"[{cri['id']}] versao WhatsApp falhou: {e}")
     formato.garantir(final, log)
     # ⭐ QA de entrega (congelado, preto, pipoco, silencio, volume, formato) + folha de contato
     entrega = qa_entrega.conferir(final, pasta, float(cfg["audio"].get("lufs", -14)), log)
@@ -139,7 +132,7 @@ def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, e
           "musica": mus, "sfx": [{"t": s["t"], "cat": s["categoria"], "motivo": s["motivo"]} for s in plano["sfx"]],
           "avisos": conferir(cri, rel, info, r["duracao"]) + ([f"voz arrastada em {', '.join(w for w, _a, _d in ruins)}: use Nova narracao"]
                                                                if ruins else []) + entrega["falhas"],
-          "entrega": entrega, "whatsapp": zap, "zona_segura": zona_segura(plano, cfg),
+          "entrega": entrega, "zona_segura": zona_segura(plano, cfg),
           "bpm": plano.get("bpm"), "final": final, "entregue": destino}
     config.escrever_json(os.path.join(pasta, "qa.json"), qa)
     shutil.rmtree(os.path.join(pasta, "_tmp"), ignore_errors=True)

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowLeft, FolderOpen, Mic, RotateCcw, ScanLine, ShieldCheck, Smartphone } from "lucide-react";
+import { ArrowLeft, FolderOpen, Mic, RotateCcw, ScanLine, ShieldCheck } from "lucide-react";
 import { enviar, midia, type Criativo } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, Selo, useAcao } from "../componentes/base";
@@ -34,11 +34,6 @@ function ConferenciaEntrega({ c }: { c: Criativo }) {
         <ul>{e.falhas.map((f, i) => <li key={`f${i}`} className="falha">{f}</li>)}{e.avisos.map((a, i) => <li key={`a${i}`}>{a}</li>)}</ul>
       )}
       {e.folha && <img className="folha" src={midia(e.folha) + `&v=${c.duracao ?? 0}`} alt={`12 quadros do criativo ${c.id}, do início ao fim`} loading="lazy" />}
-      {c.whatsapp && (
-        <a className="btn btn-ghost btn-sm" href={midia(c.whatsapp)} download target="_blank" rel="noreferrer">
-          <Smartphone size={14} aria-hidden />Versão leve para WhatsApp
-        </a>
-      )}
     </div>
   );
 }

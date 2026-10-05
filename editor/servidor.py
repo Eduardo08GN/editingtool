@@ -130,7 +130,6 @@ def detalhe_campanha(nome):
             "sfx": len(qa.get("sfx") or []), "modelo": plano.get("modelo"), "motor": qa.get("motor"),
             "zona_segura": qa.get("zona_segura") or [], "bpm": qa.get("bpm"), "motion": qa.get("motion") or [],
             "entrega": _entrega(qa.get("entrega")),
-            "whatsapp": qa.get("whatsapp") if qa.get("whatsapp") and os.path.exists(qa["whatsapp"]) else None,
             "turbo": bool(qa.get("turbo") or (qa.get("motor") == "remotion" and qa.get("motion"))),
             "transicoes": [t["tipo"] for t in plano.get("transicoes", []) if t.get("tipo") != "seco"],
             "perfil_musica": musica.perfil(c), "pasta": pasta if os.path.isdir(pasta) else None,
@@ -144,8 +143,7 @@ def detalhe_campanha(nome):
                 "turbo": bool(cfg.get("turbo")),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
-            "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar"),
-            "revisao_dir": os.path.join(saida, "_revisao_whatsapp") if os.path.isdir(os.path.join(saida, "_revisao_whatsapp")) else None}
+            "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}
 
 
 def _entrega(e):

@@ -1,4 +1,4 @@
-import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, CloudUpload, Play, RotateCcw, Smartphone, Square, Zap } from "lucide-react";
+import { AlertTriangle, ArrowRight, Check, Circle, FolderOpen, CloudUpload, Play, RotateCcw, Square, Zap } from "lucide-react";
 import { enviar, type Criativo, type Linha } from "../api";
 import type { Ctx } from "../App";
 import { CardCriativo, Girando, useAcao } from "../componentes/base";
@@ -133,12 +133,6 @@ export function Painel({ ctx }: { ctx: Ctx }) {
                     title={`${camp.publicar.repo} → ${camp.publicar.pasta}`}
                     onClick={() => rodar("pub", () => enviar("/api/publicar", { caminho: camp.nome }), "Enviando para o GitHub. Acompanhe em “Agora há pouco”.")}>
               {rodando === "pub" ? <Girando /> : <CloudUpload size={16} aria-hidden />}Enviar para o GitHub
-            </button>
-          )}
-          {camp.revisao_dir && (
-            <button className="btn btn-ghost" type="button" title="Cópias leves (720p) para mandar no WhatsApp e revisar"
-                    onClick={() => rodar("zap", () => enviar("/api/abrir-pasta", { caminho: camp.revisao_dir! }))}>
-              <Smartphone size={16} aria-hidden />Revisão WhatsApp
             </button>
           )}
           <button className="btn btn-ghost" type="button" onClick={() => rodar("pasta", () => enviar("/api/abrir-pasta", { caminho: camp.entregues_dir }))}>

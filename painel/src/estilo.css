@@ -329,4 +329,3 @@ select.campo { appearance: auto; }
 .qa-entrega ul { margin: 0; padding-left: 18px; color: var(--ow-text-2); font-size: var(--ow-fs-small); }
 .qa-entrega li.falha { color: var(--ow-sun); font-weight: 600; }
 .qa-entrega .folha { width: 100%; height: auto; border-radius: calc(var(--ow-radius) - 2px); display: block; }
-.qa-entrega .btn { justify-self: start; }
