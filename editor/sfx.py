@@ -222,9 +222,10 @@ def plano(palavras, cortes, total, cfg_audio, semente, cat=None, transicoes=None
 
 def indice_cta(palavras, gatilho="clique"):
     """Indice da palavra que abre o CTA final ("Clique em saiba mais..."), procurando do fim."""
-    alvo = _norm(gatilho)
+    # ⭐ 2026-10-05: copy do time fecha com "Clica no botao aqui embaixo" — o CTA nao era achado
+    alvos = {_norm(gatilho), "clique", "clica", "toque", "toca", "aperte", "aperta"}
     for i in range(len(palavras) - 1, -1, -1):
-        if _norm(palavras[i][0]) == alvo: return i
+        if _norm(palavras[i][0]) in alvos: return i
     return None
 
 

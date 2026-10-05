@@ -96,6 +96,14 @@ def test_afinar_sfx_na_escala():
                 assert nota in sfx.ESCALA[tom[1]], (f0, tom, grau, nota)
     assert sfx.semitons_para_escala(0, (0, "maior")) == 0.0 and sfx.semitons_para_escala(440, None) == 0.0
 
+
+def test_cta_aceita_clica():
+    """Copy do time fecha com "Clica no botao aqui embaixo": o CTA precisa ser achado (fecho e SFX)."""
+    from editor import sfx
+    pal = [("Garante", 0, 1), ("Clica", 1, 2), ("no", 2, 3), ("botão", 3, 4)]
+    assert sfx.indice_cta(pal) == 1 and sfx.indice_cta(pal, "clique") == 1
+    assert sfx.indice_cta([("clicar", 0, 1)]) is None
+
 if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)
