@@ -88,7 +88,9 @@ def aplicar_turbo(cfg):
     cfg["motor"] = "remotion"
     v = cfg["video"]
     v["motion_graphics"] = {"gancho": True, "fecho": True}
-    v["motion_blur"] = dict(v.get("motion_blur") or {}, ativo=True)
+    # ⛔ 2026-10-05: o motion blur da camera (CameraMotionBlur, 6 amostras) desenhava cada quadro de transicao
+    #    6 vezes e mais que DOBRAVA o render (81 s -> 35 s em 300 quadros sem ele). As transicoes ja' tem
+    #    borrao de movimento proprio (chicote, corte na curva, giro): o turbo nao liga mais o blur da camera.
     v["emojis"] = dict(v.get("emojis") or {}, ativo=True)
     v["selos"] = dict(v.get("selos") or {}, ativo=True)
     v["camera_lenta"] = dict(v.get("camera_lenta") or {}, ativo=True)

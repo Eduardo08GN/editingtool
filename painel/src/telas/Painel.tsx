@@ -120,7 +120,7 @@ export function Painel({ ctx }: { ctx: Ctx }) {
         </div>
         <div className="acoes">
           <button className="btn btn-turbo" type="button" aria-pressed={camp.efetivo.turbo} disabled={!!rodando}
-                  title="Liga todos os recursos tops quando pertinentes: Remotion, gancho e fecho animados, motion blur, corte na batida, música e SFX no pico"
+                  title="Liga todos os recursos tops quando pertinentes: Remotion, gancho e fecho animados, emojis, selos de confiança, câmera lenta por IA, corte na batida, música recortada e SFX no pico"
                   onClick={() => rodar("turbo", async () => {
                     await enviar(`/api/campanhas/${encodeURIComponent(camp.nome)}/ajustes`, { turbo: !camp.efetivo.turbo });
                     ctx.recarregar();

@@ -255,14 +255,16 @@ def renderizar_plano(plano, wav, saida, cfg, pasta, log=print, rotulo="", produt
     bruto = os.path.join(pasta, "_remotion_bruto.mp4")
     log_arq = os.path.join(pasta, "remotion.log")
     npx = "npx.cmd" if os.name == "nt" else "npx"
-    # ⭐ CPU dividida entre os renders paralelos do lote (cada Remotion abre varios navegadores)
-    conc = max(2, (os.cpu_count() or 4) // max(1, int(cfg.get("_workers", 2))))
+    # ⭐ CPU dividida entre os renders paralelos do lote (cada Remotion abre varios navegadores).
+    #    Medido 2026-10-05 (Ryzen 5 3600, 12 threads): 8 abas renderizam mais rapido que 6; 10-12 sufocam a CPU
+    #    (fica mais lento e chega a estourar o tempo de espera do video). ~2/3 das threads, divididos pelo lote.
+    conc = max(2, ((os.cpu_count() or 4) * 2 // 3) // max(1, int(cfg.get("_workers", 2))))
     porta = _reservar_porta()
     t0 = time.time()
     try:
         with open(log_arq, "w", encoding="utf-8", errors="replace") as lf:
             r = config.run([npx, "remotion", "render", "src/index.ts", "Criativo", bruto, f"--props={arq_props}",
-                            f"--public-dir={pub}", "--codec=h264", "--crf=19", "--pixel-format=yuv420p", "--color-space=bt709",
+                            f"--public-dir={pub}", "--codec=h264", "--crf=19", "--x264-preset=veryfast", "--pixel-format=yuv420p", "--color-space=bt709",
                             f"--concurrency={conc}", f"--port={porta}"],
                            cwd=DIR, stdout=lf, stderr=lf, stdin=subprocess.DEVNULL)
     finally:

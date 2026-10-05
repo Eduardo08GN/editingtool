@@ -158,7 +158,10 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
         if isinstance(v, dict): aj.setdefault(k, {}).update(v)
         else: aj[k] = v
     cfg = config.padrao(aj)
-    cfg["_workers"] = max(1, int(workers))          # o motor Remotion divide a CPU entre os renders paralelos
+    # o motor Remotion divide a CPU entre os renders que rodam AO MESMO TEMPO: no maximo um por publico
+    # (refazer 1 criativo usa a maquina toda, em vez de metade)
+    _alvo = [c for c in camp["criativos"] if not so or c["id"] in so]
+    cfg["_workers"] = max(1, min(int(workers), len({c["publico_n"] for c in _alvo}) or 1))
     if cfg.get("motor") == "remotion":
         from . import motor_remotion
         try:
@@ -167,7 +170,7 @@ def produzir(nome_camp, base=None, so=None, workers=2, ajustes=None, log=print, 
             if not cfg.get("turbo"): raise
             cfg["motor"] = "ffmpeg"                     # turbo e' "o melhor POSSIVEL": sem Node, segue no motor atual
             log(f"⚠ turbo: Remotion indisponivel nesta maquina ({str(e)[:120]}); usando o motor atual")
-    if cfg.get("turbo"): log("turbo ligado: Remotion, motion graphics, motion blur, corte na batida, musica e SFX no pico")
+    if cfg.get("turbo"): log("turbo ligado: Remotion, motion graphics, emojis, selos, camera lenta, corte na batida, musica recortada e SFX no pico")
     alvo = [c for c in camp["criativos"] if not so or c["id"] in so]
     if not alvo: raise SystemExit("nenhum criativo selecionado")
     for c in alvo: etapa(c["id"], "fila")

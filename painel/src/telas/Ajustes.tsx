@@ -67,7 +67,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
         <div className="panel attn turbo-aviso">
           <span className="ico-box">⚡</span>
           <div><strong>Modo Turbo ligado</strong>
-            <p>Motor Remotion, gancho e fecho animados, motion blur, corte na batida, música e SFX estão no máximo, valendo por cima dos itens abaixo. Voz, modelo e estilo das transições continuam os seus. Desligue no botão do Painel.</p></div>
+            <p>Motor Remotion, gancho e fecho animados, emojis, selos de confiança, câmera lenta por IA, corte na batida, música recortada e SFX estão no máximo, valendo por cima dos itens abaixo. Voz, modelo e estilo das transições continuam os seus. Desligue no botão do Painel.</p></div>
         </div>
       )}
 

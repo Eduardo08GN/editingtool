@@ -177,7 +177,6 @@ def turbo_recursos(camp, cfg):
         {"id": "gancho", "nome": "Gancho animado", "ativo": tem_num and rem,
          "nota": "" if tem_num else "o nome do produto nao tem numero para contar"},
         {"id": "fecho", "nome": "Cartao de fecho", "ativo": rem, "nota": ""},
-        {"id": "blur", "nome": "Motion blur", "ativo": True, "nota": "so' nas transicoes animadas"},
         {"id": "batida", "nome": "Corte na batida", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
         {"id": "musica", "nome": "Musica automatica", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
         {"id": "sfx", "nome": "SFX no pico", "ativo": True, "nota": ""},

@@ -21,7 +21,7 @@
   "janela_base": null,
   "push_in": 0.045,
   "motion_blur": {
-   "ativo": true,
+   "ativo": false,
    "amostras": 6,
    "obturador": 220
   },
