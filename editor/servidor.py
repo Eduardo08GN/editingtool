@@ -382,19 +382,64 @@ def porta_livre(preferida):
     raise SystemExit("nenhuma porta livre")
 
 
+PERFIL_JANELA = os.path.join(config.CACHE_DIR, "janela_edge")
+
+
+def fechar_janelas():
+    """Fecha as janelas da ferramenta abertas antes. ⛔ 2026-10-05: cada reinicio abria mais uma janela
+    (o operador ficou com 4). A janela roda num perfil PROPRIO do Edge (--user-data-dir), entao da' para
+    achar e fechar so' ela, sem tocar no Edge normal do operador."""
+    if os.name != "nt": return
+    import subprocess
+    alvo = PERFIL_JANELA.replace("'", "''")
+    ps = ("Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' OR Name='chrome.exe'\" | "
+          f"Where-Object {{ $_.CommandLine -like '*{alvo}*' }} | ForEach-Object {{ Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }}")
+    config.run(["powershell", "-NoProfile", "-Command", ps], capture_output=True)
+    # ⛔ abrir antes de o Edge antigo terminar de fechar = a janela nova "some" (o perfil ainda esta' preso)
+    import time
+    for _ in range(40):
+        r = config.run(["powershell", "-NoProfile", "-Command",
+                        f"(Get-CimInstance Win32_Process -Filter \"Name='msedge.exe' OR Name='chrome.exe'\" | "
+                        f"Where-Object {{ $_.CommandLine -like '*{alvo}*' }}).Count"], capture_output=True, text=True)
+        if (r.stdout or "0").strip() in ("", "0"): break
+        time.sleep(0.25)
+    time.sleep(0.5)
+
+
 def abrir_janela(url):
-    """Janela de aplicativo (Edge/Chrome em modo app); sem eles, o navegador padrao."""
+    """UMA janela de aplicativo (Edge/Chrome em modo app, perfil proprio); sem eles, o navegador padrao."""
     import shutil, subprocess, webbrowser
+    fechar_janelas()
     for exe in (shutil.which("msedge"), r"C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe",
                 r"C:\Program Files\Microsoft\Edge\Application\msedge.exe", shutil.which("chrome"),
                 r"C:\Program Files\Google\Chrome\Application\chrome.exe"):
         if exe and os.path.exists(exe):
-            subprocess.Popen([exe, f"--app={url}", "--window-size=1440,900"]); return
+            subprocess.Popen([exe, f"--app={url}", "--window-size=1440,900", f"--user-data-dir={PERFIL_JANELA}",
+                              "--no-first-run", "--no-default-browser-check"]); return
     webbrowser.open(url)
+
+
+def ja_aberta():
+    """URL do painel se ja' houver um servidor da ferramenta rodando (e respondendo), senao None."""
+    import urllib.request
+    d = config.ler_json(os.path.join(config.CACHE_DIR, "painel_api.json")) or {}
+    if not d.get("porta"): return None
+    try:
+        req = urllib.request.Request(f"http://127.0.0.1:{d['porta']}/api/estado", headers={"X-EDT-Token": d.get("token", "")})
+        with urllib.request.urlopen(req, timeout=2) as r:
+            return d.get("url") if r.status == 200 else None
+    except Exception:                                            # noqa: BLE001
+        return None
 
 
 def rodar(porta=8791, janela=True):
     import uvicorn
+    # ⭐ instancia UNICA: se a ferramenta ja' esta' rodando, so' traz a janela de volta (nao abre outra)
+    url = ja_aberta()
+    if url:
+        print(f"a ferramenta ja' esta' aberta: {url}")
+        if janela: abrir_janela(url)
+        return
     porta = porta_livre(porta)
     token = secrets.token_urlsafe(18)
     app = criar_app(token, {"127.0.0.1", "localhost"})
