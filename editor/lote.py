@@ -52,6 +52,11 @@ def conferir(cri, rel, info_tts, dur_final):
 
 def produzir_um(camp, cri, base, cfg, usadas_musica, log=print, refazer=False, etapa=None):
     etapa = etapa or (lambda _id, _e: None)
+    # ⭐ ajustes de UM criativo (ex.: 2026-10-05, o 1.1 das variacoes vira mini VSL da landing e nao leva o
+    #    cartao de fecho/SAIBA MAIS). Valem por cima da campanha E do Turbo.
+    if cri.get("ajustes"):
+        cfg = config.mesclar(cfg, cri["ajustes"])
+        log(f"[{cri['id']}] ajustes deste criativo: {cri['ajustes'].get('_por_que') or list(cri['ajustes'])}")
     pasta = os.path.join(camp["_pasta"], "saida", f"{cri['id']}-{config.slug(cri['angulo'], 30)}")
     os.makedirs(pasta, exist_ok=True)
     wav = os.path.join(pasta, "narracao.wav")

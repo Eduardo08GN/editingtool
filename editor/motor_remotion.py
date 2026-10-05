@@ -174,7 +174,9 @@ def montar_props(plano, wav, cfg, pub):
                   for k, t in enumerate(trans)]
     L = plano.get("layout") or {}
     t_cta = f(plano["cta"]["t"])
-    esconde = L.get("esconder_legenda_no_cta", True)
+    # sem CTA na tela (mini VSL): a legenda vai ate' o fim, inclusive o "clica no botao aqui embaixo"
+    mostra_cta = cfg["cta"].get("mostrar", True)
+    esconde = L.get("esconder_legenda_no_cta", True) and mostra_cta
     cards, cs = [], plano["cartoes"]
     for i, c in enumerate(cs):
         ini = [f(a) for a, _b in c["tempos"]]
@@ -203,7 +205,7 @@ def montar_props(plano, wav, cfg, pub):
                        if (cfg["video"].get("motion_blur") or {}).get("ativo") else None),
         "layout": {"legendaY": float(L.get("legenda_y", cfg["legenda"]["centro_y"])), "ctaY": float(L.get("cta_y", cfg["cta"]["centro_y"])),
                    "tituloY": float(L.get("titulo_y", 0.15)), "seloY": float(L.get("selo_y", cfg["preco"]["centro_y"]))},
-        "cta": {"from": t_cta, "texto": plano["cta"]["texto"]},
+        "cta": {"from": t_cta, "texto": plano["cta"]["texto"] if mostra_cta else ""},
         "preco": {"from": f(plano["preco"]["t"]), "texto": plano["preco"]["texto"]} if plano.get("preco") else None,
         "titulo": {"linhas": plano["titulo"]["linhas"], "from": f(plano["titulo"]["t0"]), "to": f(plano["titulo"]["t1"])} if plano.get("titulo") else None,
         "narracao": _asset(wav, pub), "musica": musica, "sfx": sfx,

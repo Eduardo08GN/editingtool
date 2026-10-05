@@ -77,6 +77,20 @@ def padrao(ajustes=None):
     return cfg
 
 
+def mesclar(cfg, ajustes):
+    """Copia de `cfg` com `ajustes` por cima (dois niveis: {"video": {"motion_graphics": {...}}}).
+    Usado pelos ajustes de UM criativo, que valem por cima da campanha e do Turbo."""
+    import copy
+    out = copy.deepcopy(cfg)
+    for k, v in (ajustes or {}).items():
+        if isinstance(v, dict) and isinstance(out.get(k), dict):
+            for kk, vv in v.items():
+                if isinstance(vv, dict) and isinstance(out[k].get(kk), dict): out[k][kk].update(vv)
+                else: out[k][kk] = vv
+        else: out[k] = v
+    return out
+
+
 def aplicar_turbo(cfg):
     """⭐ MODO TURBO (pedido do operador, 2026-10-04): liga todos os recursos tops, QUANDO pertinentes.
     O que e' "pertinente" e' decidido na hora de cada criativo, nao aqui:

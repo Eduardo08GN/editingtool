@@ -102,7 +102,7 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
             w, h = legendas.png_cartao([p.strip(",.!?;:") for p in c["palavras"]], j, est["alt"] * H, png, W, int(W * 0.86),
                                        None, est)
             x = min(max(int(W / 2 - w / 2), int(W * 0.02)), int(W * 0.98) - w)
-            corte_cta = plano["cta"]["t"] if LAY.get("esconder_legenda_no_cta", True) else total + 1
+            corte_cta = plano["cta"]["t"] if (LAY.get("esconder_legenda_no_cta", True) and cfg["cta"].get("mostrar", True)) else total + 1
             overlay(png, x, cy - h / 2, t0, min(fim, corte_cta))
 
     # ── titulo fixo do produto (modelo 2) ──
@@ -119,7 +119,7 @@ def renderizar(plano, narracao_wav, saida, cfg, pasta_tmp=None):
         overlay(png, W / 2 - w / 2, float(LAY.get("selo_y", cfg["preco"]["centro_y"])) * H - h / 2, t0, min(t0 + 2.6, plano["cta"]["t"]))
 
     # ── CTA final ──
-    tc = plano["cta"]["t"]
+    tc = plano["cta"]["t"] if cfg["cta"].get("mostrar", True) else total + 1      # mini VSL: sem CTA na tela
     png = os.path.join(tmp, "cta.png")
     w, h = legendas.png_cta(plano["cta"]["texto"], W, png)
     ycta = float(LAY.get("cta_y", cfg["cta"]["centro_y"])) * H

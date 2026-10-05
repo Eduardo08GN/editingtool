@@ -33,7 +33,19 @@
    "angulo": "Gancho setenta histórias",
    "alvo_s": 46,
    "preco": true,
-   "copy": "Setenta histórias da Bíblia, do tamanho da mãozinha do seu bebê. A Bíblia do bebê tem setenta cards com as passagens mais queridas da Bíblia, Noé, Davi, Jonas, o nascimento de Jesus, cada uma com uma brincadeira pra criança de zero a quatro anos. Serve pra mãe e pai, professores, pra avó, pra madrinha e padrinho, pra padres e pastores, e representantes de igreja em geral. Você imprime quantas vezes quiser, recorta e plastifica numa gráfica. O presente perfeito por só dez reais. Não gostou? Tem sete dias de garantia pra pedir seu reembolso. Após a compra você terá suporte exclusivo no whatsapp pra tirar todas as dúvidas. Clica no botão aqui embaixo e garante a sua Bíblia do bebê."
+   "copy": "Setenta histórias da Bíblia, do tamanho da mãozinha do seu bebê. A Bíblia do bebê tem setenta cards com as passagens mais queridas da Bíblia, Noé, Davi, Jonas, o nascimento de Jesus, cada uma com uma brincadeira pra criança de zero a quatro anos. Serve pra mãe e pai, professores, pra avó, pra madrinha e padrinho, pra padres e pastores, e representantes de igreja em geral. Você imprime quantas vezes quiser, recorta e plastifica numa gráfica. O presente perfeito por só dez reais. Não gostou? Tem sete dias de garantia pra pedir seu reembolso. Após a compra você terá suporte exclusivo no whatsapp pra tirar todas as dúvidas. Clica no botão aqui embaixo e garante a sua Bíblia do bebê.",
+   "ajustes": {
+    "_por_que": "operador 2026-10-05: SO' este video vira mini VSL da landing; sem o cartao de fecho/SAIBA MAIS",
+    "video": {
+     "motion_graphics": {
+      "gancho": true,
+      "fecho": false
+     }
+    },
+    "cta": {
+     "mostrar": false
+    }
+   }
   },
   {
    "id": "1.2",

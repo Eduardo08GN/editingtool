@@ -221,7 +221,7 @@ export const Criativo: React.FC<Props> = (p) => {
         <Sequence key={`s${i}`} from={s.from} durationInFrames={s.frames}><SeloConfianca s={s} y={p.layout.seloY + 0.09} W={W} H={H} /></Sequence>
       ))}
       {p.fecho ? <Sequence from={p.fecho.from}><FechoAnimado fecho={p.fecho} /></Sequence>
-               : <Sequence from={p.cta.from}><Cta texto={p.cta.texto} y={p.layout.ctaY} W={W} /></Sequence>}
+               : p.cta.texto ? <Sequence from={p.cta.from}><Cta texto={p.cta.texto} y={p.layout.ctaY} W={W} /></Sequence> : null}
 
       <Audio src={staticFile(p.narracao)} />
       {p.musica && (
