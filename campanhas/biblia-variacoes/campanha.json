@@ -1,0 +1,57 @@
+{
+ "produto": "Bíblia do Bebê: 70 Cards Lúdicos",
+ "nome": "biblia-variacoes",
+ "base": "C:\\Users\\edlut\\editingtool_work\\editingtool\\campanhas\\biblia-do-bebe\\base\\clipes\\Clipes",
+ "ajustes": {
+  "transicoes": {
+   "_por_que": "operador 2026-10-03: SO' nesta campanha, gravitar em transicao de cartoon",
+   "proporcao": 0.7,
+   "pesos": {
+    "iris": 5,
+    "pop_elastico": 5,
+    "boing": 5,
+    "balanco": 4,
+    "giro_cartoon": 4,
+    "circulo": 2,
+    "zoom_punch": 1.5,
+    "chicote_h": 1,
+    "chicote_v": 1,
+    "luz": 1,
+    "flash": 1
+   }
+  },
+  "turbo": true,
+  "cta": {
+   "gatilho": "clica"
+  }
+ },
+ "criativos": [
+  {
+   "id": "1.1",
+   "publico_n": 1,
+   "publico": "Variacoes da copy do time",
+   "angulo": "Gancho setenta historias",
+   "alvo_s": 46,
+   "preco": true,
+   "copy": "Setenta histórias da Bíblia, do tamanho da mãozinha do seu bebê. A Bíblia do bebê tem setenta cards com as passagens mais queridas da Bíblia, Noé, Davi, Jonas, o nascimento de Jesus, cada uma com uma brincadeira pra criança de zero a quatro anos. Serve pra mãe e pai, professores, pra avó, pra madrinha e padrinho, pra padres e pastores, e representantes de igreja em geral. Você imprime quantas vezes quiser, recorta e plastifica numa gráfica. O presente perfeito por só dez reais. Não gostou? Tem sete dias de garantia pra pedir seu reembolso. Após a compra você terá suporte exclusivo no whatsapp pra tirar todas as dúvidas. Clica no botão aqui embaixo e garante a sua Bíblia do bebê."
+  },
+  {
+   "id": "1.2",
+   "publico_n": 1,
+   "publico": "Variacoes da copy do time",
+   "angulo": "Gancho pequeno demais",
+   "alvo_s": 47,
+   "preco": true,
+   "copy": "Seu bebê é pequeno demais pra conhecer Deus? A fé começa desde o colo. A Bíblia do bebê tem setenta cards com as passagens mais queridas da Bíblia, Noé, Davi, Jonas, o nascimento de Jesus, cada uma com uma brincadeira pra criança de zero a quatro anos. Serve pra mãe e pai, professores, pra avó, pra madrinha e padrinho, pra padres e pastores, e representantes de igreja em geral. Você imprime quantas vezes quiser, recorta e plastifica numa gráfica. O presente perfeito por só dez reais. Não gostou? Tem sete dias de garantia pra pedir seu reembolso. Após a compra você terá suporte exclusivo no whatsapp pra tirar todas as dúvidas. Clica no botão aqui embaixo e garante a sua Bíblia do bebê."
+  },
+  {
+   "id": "1.3",
+   "publico_n": 1,
+   "publico": "Variacoes da copy do time",
+   "angulo": "Gancho presente de batizado",
+   "alvo_s": 46,
+   "preco": true,
+   "copy": "Procurando um presente de batizado que ninguém mais vai dar? A Bíblia do bebê tem setenta cards com as passagens mais queridas da Bíblia, Noé, Davi, Jonas, o nascimento de Jesus, cada uma com uma brincadeira pra criança de zero a quatro anos. Serve pra mãe e pai, professores, pra avó, pra madrinha e padrinho, pra padres e pastores, e representantes de igreja em geral. Você imprime quantas vezes quiser, recorta e plastifica numa gráfica. O presente perfeito por só dez reais. Não gostou? Tem sete dias de garantia pra pedir seu reembolso. Após a compra você terá suporte exclusivo no whatsapp pra tirar todas as dúvidas. Clica no botão aqui embaixo e garante a sua Bíblia do bebê."
+  }
+ ]
+}
