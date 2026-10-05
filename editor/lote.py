@@ -41,7 +41,10 @@ def conferir(cri, rel, info_tts, dur_final):
     av = []
     if rel.get("razao", 0) < 0.85: av.append(f"fala divergente da copy (similaridade {rel.get('razao')})")
     if rel.get("extras", 0) > 2: av.append(f"TTS falou {rel['extras']} palavra(s) a mais")
-    if "clique" not in rel.get("ouvido", "").lower(): av.append("CTA 'clique em saiba mais' nao foi ouvido")
+    # o CTA da copy ("clique"/"clica"/"toque"...) precisa ter sido ouvido na narracao
+    from . import sfx as _sfx
+    if _sfx.indice_cta([(w, 0, 0) for w in rel.get("ouvido", "").split()]) is None:
+        av.append("CTA (clique/clica em ...) nao foi ouvido na narracao")
     if abs(info_tts["duracao"] - cri["alvo_s"]) > 4:
         av.append(f"narracao {info_tts['duracao']}s vs alvo {cri['alvo_s']}s")
     return av
