@@ -84,11 +84,14 @@ def validar(camp):
         est = estimar_s(c["copy"])
         if abs(est - c["alvo_s"]) > max(4, c["alvo_s"] * 0.2):
             av.append(f"{c['id']}: copy estimada em {est}s para alvo de {c['alvo_s']}s ({palavras(c['copy'])} palavras)")
-        if " ".join(_norm(CTA_FRASE)) not in " ".join(_norm(c["copy"])):
-            av.append(f"{c['id']}: sem o CTA '{CTA_FRASE}'")
+        # CTA: a frase padrao OU qualquer "clique/clica/toque/aperte..." (a copy do time diz "Clica no botao")
+        if " ".join(_norm(CTA_FRASE)) not in " ".join(_norm(c["copy"])) and                 not ({"clique", "clica", "toque", "toca", "aperte", "aperta"} & set(_norm(c["copy"]))):
+            av.append(f"{c['id']}: sem CTA (ex.: '{CTA_FRASE}')")
         fala_preco = "reais" in _norm(c["copy"])
         if c["preco"] and not fala_preco: av.append(f"{c['id']}: marcado COM preco mas a copy nao fala o preco")
         if not c["preco"] and fala_preco: av.append(f"{c['id']}: marcado SEM preco mas a copy fala 'reais'")
+    # ⭐ campanha de VARIACOES (ex.: 3 ganchos para uma copy do time) nao segue a regra 5 angulos x 5 publicos
+    if camp.get("regra") is False: return av
     for n, lst in sorted(por_pub.items()):
         cont = {k: 0 for k in CLASSES}
         for c in lst: cont[classe(c["alvo_s"])] += 1

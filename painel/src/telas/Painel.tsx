@@ -128,9 +128,11 @@ export function Painel({ ctx }: { ctx: Ctx }) {
                                         : "Modo Turbo ligado: os próximos criativos saem com todos os recursos tops. Use Refazer para aplicar nos prontos.")}>
             {rodando === "turbo" ? <Girando /> : <Zap size={16} aria-hidden />}Modo Turbo{camp.efetivo.turbo ? " · ligado" : ""}
           </button>
-          {camp.publicar?.repo && (
-            <button className="btn btn-ghost" type="button" disabled={estado.rodando || !entregues || !!rodando}
-                    title={`${camp.publicar.repo} → ${camp.publicar.pasta}`}
+          {/* ⭐ sempre a vista; sem destino (nem herdado de outra campanha do produto) fica desligado e explica */}
+          {(
+            <button className="btn btn-ghost" type="button" disabled={estado.rodando || !entregues || !!rodando || !camp.publicar?.repo}
+                    title={camp.publicar?.repo ? `${camp.publicar.repo} → ${camp.publicar.pasta}`
+                                               : "Sem destino no GitHub: rode uma vez  edt publicar <campanha> --repo <url> --pasta <pasta>"}
                     onClick={() => rodar("pub", () => enviar("/api/publicar", { caminho: camp.nome }), "Enviando para o GitHub. Acompanhe em “Agora há pouco”.")}>
               {rodando === "pub" ? <Girando /> : <CloudUpload size={16} aria-hidden />}Enviar para o GitHub
             </button>

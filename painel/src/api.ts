@@ -28,7 +28,7 @@ export interface Criativo {
 export interface Campanha {
   nome: string; produto: string; pasta: string; base: string | null; base_ok: boolean; regra: string[];
   turbo_recursos: { id: string; nome: string; ativo: boolean; nota: string }[];
-  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; publicar?: { repo: string; pasta: string; auto?: boolean } | null;
+  criativos: Criativo[]; ajustes: Record<string, any>; entregues_dir: string; publicar?: { repo: string; pasta: string; auto?: boolean; herdado?: string } | null;
   efetivo: { turbo: boolean; voz: string; velocidade: number; modelo: string; motor: string; motion_graphics: { gancho?: boolean; fecho?: boolean }; emojis?: boolean; camera_lenta?: boolean; musica: string; sfx: boolean; legenda_estilo: number;
              transicoes: { proporcao?: number; pesos?: Record<string, number> } };
 }

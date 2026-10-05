@@ -48,11 +48,27 @@ def _versoes_antigas(pasta, cri, novo):
     return [n for n in (os.listdir(pasta) if os.path.isdir(pasta) else []) if rx.match(n) and n != novo]
 
 
+def destino(camp):
+    """Destino no GitHub da campanha. Sem destino proprio, HERDA o de outra campanha do MESMO produto
+    (⭐ 2026-10-05: as variacoes da Biblia nao tinham o botao "Enviar para o GitHub")."""
+    if (camp.get("publicar") or {}).get("repo"): return dict(camp["publicar"])
+    prod = (camp.get("produto") or "").strip().lower()
+    if not prod: return None
+    for d in sorted(os.listdir(config.CAMPANHAS_DIR)):
+        outra = config.ler_json(os.path.join(config.CAMPANHAS_DIR, d, "campanha.json")) or {}
+        p = outra.get("publicar") or {}
+        if outra.get("nome") != camp.get("nome") and (outra.get("produto") or "").strip().lower() == prod and p.get("repo") and p.get("pasta"):
+            return dict({"repo": p["repo"], "pasta": p["pasta"], "estrutura": p.get("estrutura", "plana"), "auto": False},
+                        **(camp.get("publicar") or {}), herdado=d)
+    return None
+
+
 def publicar(nome, repo=None, pasta=None, log=print, ids=None):
     camp = _camp.carregar(nome)
     arq_camp = os.path.join(camp["_pasta"], "campanha.json")
     salvo = config.ler_json(arq_camp)
-    pub = dict(salvo.get("publicar") or {})
+    pub = dict(destino(salvo) or {}, **(salvo.get("publicar") or {}))      # herdado + o que a campanha ja' tem
+    pub.pop("herdado", None)
     if repo: pub["repo"] = repo
     if pasta: pub["pasta"] = pasta
     pub.setdefault("estrutura", "plana")

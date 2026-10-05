@@ -145,7 +145,12 @@ def detalhe_campanha(nome):
                 "turbo": bool(cfg.get("turbo")),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
-            "entregues_dir": os.path.join(saida, "_entregues"), "publicar": camp.get("publicar")}
+            "entregues_dir": os.path.join(saida, "_entregues"), "publicar": _pub_destino(camp)}
+
+
+def _pub_destino(camp):
+    from . import publicar as _p
+    return _p.destino(camp)
 
 
 def _entrega(e):
