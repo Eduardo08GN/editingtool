@@ -14,7 +14,7 @@ ffmpeg.
 """
 import os, random, re, unicodedata, zlib
 
-from . import config, sfx as _sfx
+from . import config, emojis as _emo, sfx as _sfx
 
 PONTUACAO_FIM = re.compile(r"[.,!?;:]$")
 
@@ -111,6 +111,15 @@ IMA_BATIDA_S = 0.14
 FOLGA_CLIPE = 0.3         # imagem que o plano precisa alem do proprio tempo (meias-transicoes)       # o corte so' "pula" para a batida se ela estiver a ate' isto da troca de frase
 
 
+def _lenta(arq, a, b, d, cl):
+    """Plano em camera lenta sobre a peca [a, b] do clipe, se ela cobrir `d` (+folgas) dentro do fator maximo."""
+    L = b - a
+    if L < 0.5: return None
+    fator = (d + 2 * FOLGA_CLIPE) / L
+    if fator <= 1.0 or fator > float(cl.get("fator_max", 2.0)): return None
+    return {"arquivo": arq, "dur": round(d, 3), "src": FOLGA_CLIPE, "lenta": {"ini": round(a, 3), "dur": round(L, 3), "fator": round(fator, 4)}}
+
+
 def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
     """[{'dur','src','zoom'}] cobrindo `total` s.
     ⭐ Com `batidas` (grade da musica): entre as trocas de frase possiveis, prefere a que esta' mais perto
@@ -171,9 +180,15 @@ def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
     if fixo_final and an.get("pasta"):          # o clipe final fica reservado para o fecho
         ordem = [g for g in ordem if grupos[g][0][0] != ultimo_clipe["arquivo"]] or ordem
     planos, cursor = [], 0
+    # ⭐ camera lenta (RIFE): plano maior que o trecho -> desacelera em vez de congelar ou sair da historia
+    cl = cfg_v.get("camera_lenta") or {}
+    lentas = int(cl.get("max_por_video", 2)) if cl.get("ativo") else 0
     for k, d in enumerate(duracoes):
         if k == len(duracoes) - 1 and fixo_final:
             arq = ultimo_clipe["arquivo"]
+            if lentas and ultimo_clipe["duracao"] < d + FOLGA_CLIPE + 0.15:
+                pl = _lenta(arq, 0.0, ultimo_clipe["duracao"], d, cl)
+                if pl: planos.append(dict(pl, zoom=zooms[(z0 + k) % len(zooms)])); lentas -= 1; continue
             planos.append({"arquivo": arq, "dur": round(d, 3), "src": round(max(0.0, ultimo_clipe["duracao"] - d - 0.15), 3),
                            "zoom": zooms[(z0 + k) % len(zooms)]}); continue
         escolha = None
@@ -184,10 +199,18 @@ def linha_do_tempo(total, inicios_cartao, an, cfg_v, sem, batidas=None):
             #    sem esta folga, um plano no fim de um clipe curto congelava ~0,13 s
             boas = [p for p in g if p[2] - p[1] >= d + FOLGA_CLIPE]
             if boas: escolha = rng.choice(boas); cursor += tent + 1; break
+            if tent == 0 and lentas and dur_clipe[g[0][0]] < d + 2 * FOLGA_CLIPE:
+                # o clipe da vez na historia e' curto: camera lenta nele (a historia segue na ordem)
+                pl = next(filter(None, (_lenta(a_, b0, b1, d, cl) for a_, b0, b1 in sorted(g, key=lambda p: p[1] - p[2]))), None)
+                if pl: escolha = pl; cursor += 1; break
             if dur_clipe[g[0][0]] >= d + 2 * FOLGA_CLIPE:
                 arq = g[0][0]; a = rng.uniform(FOLGA_CLIPE, dur_clipe[arq] - d - FOLGA_CLIPE); escolha = (arq, a, a + d); cursor += tent + 1; break
+        if isinstance(escolha, dict):
+            planos.append(dict(escolha, zoom=zooms[(z0 + k) % len(zooms)])); lentas -= 1; continue
         if escolha is None:          # nenhum clipe comporta: usa o mais longo
             arq = max(dur_clipe, key=dur_clipe.get); escolha = (arq, 0.0, dur_clipe[arq])
+            if lentas and (pl := _lenta(arq, 0.0, dur_clipe[arq], d, cl)):
+                planos.append(dict(pl, zoom=zooms[(z0 + k) % len(zooms)])); lentas -= 1; continue
         arq, a, b = escolha
         folga = (b - a) - d
         src = a + (rng.uniform(0, folga) if folga > 0 else 0.0)
@@ -246,6 +269,14 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
         except Exception as e:                               # noqa: BLE001 — sem batida, corta so' pela fala
             print(f"   batida: nao consegui analisar a musica ({e}); cortando so' pela fala")
     planos, cortes = linha_do_tempo(total, [c["t0"] for c in cards], an, cfg["video"], sem, grade_bt)
+    for pl in planos:
+        if pl.get("lenta"):                                  # ⭐ gera o trecho em camera lenta (RIFE) ja' no plano
+            from . import camera_lenta as _cl
+            L = pl["lenta"]
+            caminho, metodo = _cl.gerar(pl["arquivo"], L["ini"], L["dur"], L["fator"], cfg["video"])
+            pl["lenta"] = dict(L, metodo=metodo, original=pl["arquivo"]); pl["arquivo"] = caminho
+            print(f"   camera lenta ({metodo}): {os.path.basename(L.get('original', pl['lenta']['original']))} "
+                  f"{L['dur']:.2f}s -> {pl['dur']:.2f}s (x{L['fator']:.2f})")
     tom_mus = None
     if musica_escolhida:
         try:
@@ -270,6 +301,7 @@ def planejar(cri, palavras, dur_narracao, base, cfg, campanha="", musica_escolhi
     return {
         "id": cri["id"], "semente": sem, "total": total, "base": os.path.abspath(base),
         "modelo": modelo, "layout": M, "titulo": titulo, "bpm": bpm,
+        "emojis": _emo.escolher(palavras, t_cta, cfg["video"].get("emojis"), sem),
         "planos": planos, "cortes": [round(c, 3) for c in cortes],
         "cartoes": cards, "cta": {"t": round(t_cta, 3), "texto": cfg["cta"]["texto"]},
         "preco": ({"t": round(preco[0], 3), "texto": preco[1]} if preco else None),

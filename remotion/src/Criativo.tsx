@@ -7,6 +7,7 @@ import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { CameraMotionBlur } from "@remotion/motion-blur";
 import { apresentacao } from "./transicoes";
 import { FechoAnimado, GanchoAnimado, VideoQueEncolhe, type Fecho, type Gancho } from "./motion";
+import { AnimatedEmoji } from "@remotion/animated-emoji";
 
 export type Props = {
   fps: number; width: number; height: number; totalFrames: number; pushIn: number;
@@ -23,6 +24,7 @@ export type Props = {
   motionBlur?: { amostras: number; obturador: number } | null;
   gancho?: Gancho | null;
   fecho?: Fecho | null;
+  emojis?: { nome: string; from: number; frames: number }[];
 };
 
 const AMARELO = "#FFE200", GRAFITE = "#111114";
@@ -176,6 +178,25 @@ const BaseComBlur: React.FC<{ p: Props; W: number; H: number; janelas: [number, 
   return <Base p={p} W={W} H={H} />;
 };
 
+// ⭐ emoji animado (Google Noto, CC BY 4.0) que salta acima da legenda na palavra-chave
+const Emoji: React.FC<{ e: NonNullable<Props["emojis"]>[number]; y: number; W: number; H: number }> = ({ e, y, W, H }) => {
+  const f = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const entra = spring({ frame: f, fps, config: { damping: 9, stiffness: 170, mass: 0.6 } });
+  const sai = interpolate(f, [e.frames - 7, e.frames], [1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const lado = (e.from % 2 === 0 ? 1 : -1);
+  const tam = Math.round(W * 0.2);
+  const sobe = interpolate(f, [0, e.frames], [0, -H * 0.012]);
+  return (
+    <div style={{ position: "absolute", left: W / 2 - tam / 2, top: H * (y - 0.115) - tam / 2 + sobe, width: tam, height: tam,
+                  transform: `scale(${entra * (0.6 + 0.4 * sai)}) rotate(${(1 - entra) * 18 * lado}deg)`, opacity: sai,
+                  filter: "drop-shadow(0 10px 18px rgba(0,0,0,.35))" }}>
+      <AnimatedEmoji emoji={e.nome as any} scale="0.5" style={{ width: tam, height: tam }}
+                     calculateSrc={({ emoji }) => staticFile(`assets/emoji_${emoji}-0.5x.webm`)} />
+    </div>
+  );
+};
+
 export const Criativo: React.FC<Props> = (p) => {
   const { width: W, height: H } = useVideoConfig();
   const janelas = React.useMemo(() => janelasDeTransicao(p), [p]);
@@ -188,6 +209,9 @@ export const Criativo: React.FC<Props> = (p) => {
       {p.titulo && <Sequence from={p.titulo.from} durationInFrames={p.titulo.to - p.titulo.from}><Titulo t={p.titulo} y={p.layout.tituloY} W={W} /></Sequence>}
       {p.cards.map((c, i) => (
         <Sequence key={i} from={c.from} durationInFrames={c.to - c.from}><Cartao c={c} y={p.layout.legendaY} W={W} /></Sequence>
+      ))}
+      {(p.emojis ?? []).map((e, i) => (
+        <Sequence key={`e${i}`} from={e.from} durationInFrames={e.frames}><Emoji e={e} y={p.layout.legendaY} W={W} H={H} /></Sequence>
       ))}
       {p.preco && <Sequence from={p.preco.from} durationInFrames={80}><Selo texto={p.preco.texto} y={p.layout.seloY} W={W} /></Sequence>}
       {p.fecho ? <Sequence from={p.fecho.from}><FechoAnimado fecho={p.fecho} /></Sequence>

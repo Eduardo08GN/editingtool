@@ -54,3 +54,9 @@ A saída fica em `campanhas/<nome>/saida/`:
 - `relatorio.json`
 
 Cada criativo tem também a própria pasta, com `plano.json` e `qa.json`.
+
+## Créditos de terceiros
+
+- **Emojis animados**: [Google Noto Animated Emoji](https://googlefonts.github.io/noto-emoji-animation/), licença CC BY 4.0, via `@remotion/animated-emoji`. Baixados sob demanda para `.cache/emojis`.
+- **Câmera lenta por IA**: [rife-ncnn-vulkan](https://github.com/nihui/rife-ncnn-vulkan) (MIT), modelo RIFE v4.6. Baixado na primeira vez para `.cache/ferramentas`.
+- **Alinhamento fino da legenda**: modelo MMS_FA da Meta via `torchaudio` (alinhamento forçado wav2vec2 + CTC, a técnica do WhisperX).

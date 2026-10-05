@@ -8,7 +8,7 @@ LETRA e nao palavra, e palavra que o TTS falou a mais fica fora da legenda.
 Motores: faster-whisper (padrao, modelo `small` ja' no cache do HF) ou whisper.cpp
 (`WHISPER_CPP_DIR`, ex.: C:/Users/edlut/ogtools/tools/whisper).
 """
-import difflib, json, os
+import difflib, json, os, zlib
 
 from . import config
 
@@ -120,8 +120,75 @@ def alinhar(wav, copy, cfg):
     if melhor is None or melhor[1]["razao"] < 0.70:
         rel = dict(melhor[1]) if melhor else {"razao": 0.0, "trocas": 0, "extras": 0, "faltas": 0, "ouvido": ""}
         rel["motor"] = "proporcional"
-        return proporcional(copy, config.duracao(wav)), rel
+        melhor = (proporcional(copy, config.duracao(wav)), rel)
+    if cfg.get("alinhamento_fino", True):
+        try:
+            fino, info = forcado(wav, copy, melhor[0], confiar_guia=melhor[1]["motor"] != "proporcional")
+            melhor[1]["fino"] = info
+            if fino: return fino, melhor[1]
+        except Exception as e:                                   # noqa: BLE001 — sem o fino, fica o do whisper
+            melhor[1]["fino"] = {"usado": False, "motivo": str(e)[:200]}
+            print(f"   alinhamento fino falhou: {e}")
     return melhor
+
+
+# ── alinhamento FORCADO (a tecnica do WhisperX: wav2vec2 + CTC) ─────────────────────────────────────
+# O whisper ADIVINHA o texto e da' tempos aproximados (~0,1-0,3 s). Aqui o texto e' conhecido (a copy que
+# o TTS leu), entao um modelo acustico acha onde cada LETRA esta' no audio: a palavra acende na legenda
+# no instante em que comeca a ser dita. Modelo MMS_FA da Meta (multilingue, via torchaudio, roda na CPU).
+_FA = {}
+
+
+def _letras(w):
+    import unicodedata
+    n = unicodedata.normalize("NFKD", (w or "").lower()).encode("ascii", "ignore").decode()
+    return "".join(c for c in n if "a" <= c <= "z" or c == "'")
+
+
+def forcado(wav, copy, guia, confiar_guia=True):
+    """(palavras, info). `guia` = alinhamento do whisper, para conferir: se o forcado discordar demais
+    (texto que o TTS nao leu como escrito), devolve (None, info) e o whisper fica."""
+    import numpy as np, torch, torchaudio
+    exp = [w for w in (copy or "").split() if w.strip()]
+    if not exp: return None, {"usado": False, "motivo": "copy vazia"}
+    chave = f"{os.path.getsize(wav)}|{os.path.getmtime(wav)}|{zlib.crc32(copy.encode())}"
+    cache = wav + ".fino.json"
+    d = config.ler_json(cache)
+    if d and d.get("chave") == chave:
+        pal = [tuple(x) for x in d["palavras"]]
+    else:
+        b = torchaudio.pipelines.MMS_FA
+        if "m" not in _FA:
+            _FA["m"] = b.get_model(with_star=True).eval()
+            _FA["tok"], _FA["al"] = b.get_tokenizer(), b.get_aligner()
+        raw = config.run([config.FFMPEG, "-v", "error", "-i", wav, "-ac", "1", "-ar", str(b.sample_rate), "-f", "f32le", "-"],
+                         capture_output=True).stdout
+        onda = torch.from_numpy(np.frombuffer(raw, np.float32).copy()).unsqueeze(0)
+        with torch.inference_mode():
+            emissao, _ = _FA["m"](onda)
+        # numero ("70", "R$19,90") nao tem letra: entra como '*' (qualquer som) e pega o tempo do trecho
+        alvo = [_letras(w) or "*" for w in exp]
+        spans = _FA["al"](emissao[0], _FA["tok"](alvo))
+        razao = onda.size(1) / emissao.size(1) / b.sample_rate
+        pal = []
+        for w, sp in zip(exp, spans):
+            pal.append((w, round(sp[0].start * razao, 3), round(sp[-1].end * razao, 3),
+                        round(float(sum(s.score * len(s) for s in sp) / max(1, sum(len(s) for s in sp))), 3)))
+        config.escrever_json(cache, {"chave": chave, "palavras": pal})
+    nota = float(np.mean([p[3] for p in pal]))
+    info = {"usado": False, "nota": round(nota, 3)}
+    if confiar_guia and guia and len(guia) == len(pal):
+        dif = [abs(a[1] - g[1]) for a, g in zip(pal, guia)]
+        info["desvio_mediano_s"] = round(float(np.median(dif)), 3)
+        if np.median(dif) > 0.35: info["motivo"] = "discorda do whisper"; return None, info
+    if nota < 0.35: info["motivo"] = "nota baixa"; return None, info
+    info["usado"] = True
+    # a palavra so' acende quando comeca; o fim nunca invade a seguinte
+    out = []
+    for i, (w, a, b2, _s) in enumerate(pal):
+        prox = pal[i + 1][1] if i + 1 < len(pal) else b2 + 0.3
+        out.append((w, a, max(a + 0.06, min(b2, prox))))
+    return out, info
 
 
 CTA_PALAVRAS = {"saiba", "mais", "clique", "confira", "garanta", "garante"}

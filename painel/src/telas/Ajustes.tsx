@@ -21,6 +21,8 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
   const [motor, setMotor] = useState(ef?.motor ?? "remotion");
   const [gancho, setGancho] = useState(ef?.motion_graphics?.gancho ?? true);
   const [fecho, setFecho] = useState(ef?.motion_graphics?.fecho ?? true);
+  const [emojis, setEmojis] = useState(ef?.emojis ?? true);
+  const [lenta, setLenta] = useState(ef?.camera_lenta ?? true);
   const [musica, setMusica] = useState(ef?.musica === "auto");
   const [sfx, setSfx] = useState(ef?.sfx ?? true);
   const temCartoon = !!ef?.transicoes?.pesos && Object.keys(ef.transicoes.pesos).some((k) => k === "iris");
@@ -31,6 +33,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
     if (!ef) return;
     setVoz(ef.voz); setVel(ef.velocidade); setModelo(ef.modelo ?? "alternar"); setMotor(ef.motor ?? "remotion");
     setGancho(ef.motion_graphics?.gancho ?? true); setFecho(ef.motion_graphics?.fecho ?? true); setMusica(ef.musica === "auto"); setSfx(ef.sfx);
+    setEmojis(ef.emojis ?? true); setLenta(ef.camera_lenta ?? true);
     setEstilo(ef.transicoes?.pesos && "iris" in ef.transicoes.pesos ? "cartoon" : "padrao"); setProp(ef.transicoes?.proporcao ?? 0.6);
     setAutoPub(camp?.publicar?.auto !== false);
   }, [camp?.nome]);   // eslint-disable-line react-hooks/exhaustive-deps
@@ -41,7 +44,7 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
       tts: { voz: voz.trim(), velocidade: Number(vel) },
       modelo,
       motor,
-      video: { motion_graphics: { gancho, fecho } },
+      video: { motion_graphics: { gancho, fecho }, emojis: { ativo: emojis }, camera_lenta: { ativo: lenta } },
       audio: { musica: musica ? "auto" : "", sfx },
       transicoes: { proporcao: Number(prop), pesos: estilo === "cartoon" ? PESOS_CARTOON : {} },
       ...(camp.publicar?.repo ? { publicar: { auto: autoPub } } : {}),
@@ -96,6 +99,12 @@ export function Ajustes({ ctx }: { ctx: Ctx }) {
         <div className="switch-linha"><div><strong>Cartão de fecho</strong>
           <p className="meta">No “clique em saiba mais”: o vídeo vira um cartão, o nome do produto se escreve e o botão SAIBA MAIS se forma com as setas.</p></div>
           <Interruptor ligado={fecho} mudar={setFecho} rotulo="Cartão de fecho" /></div>
+        <div className="switch-linha"><div><strong>Emojis animados</strong>
+          <p className="meta">Um emoji animado salta acima da legenda nas palavras-chave (bebê 🐣, oração 🙏, amor ❤️, presente 🎁). No máximo 4 por vídeo, um a cada 5 s.</p></div>
+          <Interruptor ligado={emojis} mudar={setEmojis} rotulo="Emojis animados" /></div>
+        <div className="switch-linha"><div><strong>Câmera lenta por IA</strong>
+          <p className="meta">Quando um clipe é curto para o plano, a IA (RIFE) cria quadros novos e desacelera o trecho em vez de congelar a imagem ou pular a ordem da história. Até 2 por vídeo.</p></div>
+          <Interruptor ligado={lenta} mudar={setLenta} rotulo="Câmera lenta por IA" /></div>
       </section>
 
       <section className="panel bloco" aria-label="Edição">

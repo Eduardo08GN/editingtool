@@ -140,6 +140,8 @@ def detalhe_campanha(nome):
             "ajustes": camp.get("ajustes") or {}, "efetivo": {
                 "voz": cfg["tts"]["voz"], "velocidade": cfg["tts"]["velocidade"], "modelo": cfg.get("modelo"),
                 "motor": cfg.get("motor", "ffmpeg"), "motion_graphics": cfg["video"].get("motion_graphics") or {},
+                "emojis": bool((cfg["video"].get("emojis") or {}).get("ativo")),
+                "camera_lenta": bool((cfg["video"].get("camera_lenta") or {}).get("ativo")),
                 "turbo": bool(cfg.get("turbo")),
                 "musica": cfg["audio"].get("musica"), "sfx": cfg["audio"].get("sfx", True),
                 "legenda_estilo": cfg["legenda"]["estilo"], "transicoes": cfg.get("transicoes", {})},
@@ -173,6 +175,8 @@ def turbo_recursos(camp, cfg):
         {"id": "batida", "nome": "Corte na batida", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
         {"id": "musica", "nome": "Musica automatica", "ativo": tem_mus, "nota": "" if tem_mus else "sem biblioteca de musica"},
         {"id": "sfx", "nome": "SFX no pico", "ativo": True, "nota": ""},
+        {"id": "emojis", "nome": "Emojis animados", "ativo": True, "nota": "nas palavras-chave"},
+        {"id": "lenta", "nome": "Camera lenta por IA", "ativo": True, "nota": "clipe curto nao congela"},
         {"id": "transicoes", "nome": f"70% com transicao ({estilo})", "ativo": True, "nota": ""},
     ]
 

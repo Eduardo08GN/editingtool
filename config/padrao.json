@@ -28,6 +28,18 @@
   "motion_graphics": {
    "gancho": true,
    "fecho": true
+  },
+  "emojis": {
+   "ativo": true,
+   "max": 4,
+   "espaco_s": 5.0,
+   "dur_s": 1.7
+  },
+  "camera_lenta": {
+   "ativo": true,
+   "max_por_video": 2,
+   "fator_max": 2.0,
+   "modelo": "rife-v4.6"
   }
  },
  "tts": {

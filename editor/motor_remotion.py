@@ -193,8 +193,26 @@ def montar_props(plano, wav, cfg, pub):
         "preco": {"from": f(plano["preco"]["t"]), "texto": plano["preco"]["texto"]} if plano.get("preco") else None,
         "titulo": {"linhas": plano["titulo"]["linhas"], "from": f(plano["titulo"]["t0"]), "to": f(plano["titulo"]["t1"])} if plano.get("titulo") else None,
         "narracao": _asset(wav, pub), "musica": musica, "sfx": sfx,
+        "emojis": _emojis(plano, pub, t_cta),
         "fala": [[c["from"], c["to"]] for c in cards],          # a musica abaixa por baixo da voz
     }
+
+
+def _emojis(plano, pub, t_cta):
+    """Emojis animados do plano -> props (o arquivo .webm vai para o public desta renderizacao)."""
+    from . import emojis as _emo
+    out = []
+    for e in plano.get("emojis") or []:
+        try:
+            src = _emo.arquivo(e["nome"])
+        except Exception as x:                           # noqa: BLE001 — sem internet: segue sem o emoji
+            print(f"   emoji {e['nome']}: nao consegui baixar ({x})"); continue
+        ini = int(round(e["t"] * FPS)); frames = min(int(round(e["dur"] * FPS)), max(0, t_cta - ini))
+        if frames < 12: continue
+        os.makedirs(os.path.join(pub, "assets"), exist_ok=True)
+        _ligar(src, os.path.join(pub, "assets", f"emoji_{e['nome']}-0.5x.webm"))
+        out.append({"nome": e["nome"], "from": ini, "frames": frames})
+    return out
 
 
 def _reservar_porta():
