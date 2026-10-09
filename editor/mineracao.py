@@ -636,7 +636,9 @@ def _importar_planilha(rid, itens, nome, log, parar):
              "n_concorrentes": it.get("concorrentes_fr"), "anuncios_fr": it.get("anuncios_fr"), "anuncios_fr_15d": it.get("anuncios_fr_15d"),
              "esforco": it.get("esforco"), "aceitacao": it.get("aceitacao_fr"), "adaptacao": it.get("adaptacao"),
              "paises_alvo": it.get("paises_alvo"), "nota_planilha": it.get("nota")}
-        o["nota"] = float(it["nota"]) if it.get("nota") is not None else nota(o)
+        # ⭐ a nota da tabela e' a automatica (medida hoje, como as outras rodadas); a da planilha fica ao lado.
+        #    Sem medicao (sem token), vale a da planilha.
+        o["nota"] = nota(o) if o["alcance_ue"] or it.get("nota") is None else float(it["nota"])
         out.append(o)
     out.sort(key=lambda o: (-o["nota"], -o["alcance_ue"]))
     config.escrever_json(os.path.join(_pasta(rid), "ofertas.json"), out)

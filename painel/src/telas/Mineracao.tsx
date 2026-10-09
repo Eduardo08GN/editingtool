@@ -360,120 +360,181 @@ function ImportarPlanilha({ ctx, fechar, puxar }: { ctx: Ctx; fechar: () => void
 }
 
 // ── a tabela de ofertas ───────────────────────────────────────────────────────
+// ⭐ feita para passar o olho: poucas colunas, cada numero com uma barra, cor so' onde decide
+//    (nota, buraco, concorrencia). O resto (variacoes, observacao, lista de concorrentes) mora no detalhe.
 type Aba = "todas" | "FR" | "DE" | "aprovadas" | "descartadas";
 type Ordem = "nota" | "alcance" | "anuncios_15d" | "desde";
 
-function Paises({ o }: { o: Oferta }) {
-  const lst = Object.entries(o.paises_pct).filter(([, v]) => v > 0).slice(0, 3);
-  if (!lst.length) return <span className="meta">—</span>;
-  return <span className="paises">{lst.map(([k, v]) => <span key={k}>{PAIS[k] ?? k} <b>{v}%</b></span>)}</span>;
+const GRUPO_PAIS: Record<string, string> = { FR: "fr", BE: "fr", LU: "fr", DE: "de", AT: "de", PT: "pt", ES: "es", IT: "it" };
+const corPais = (k: string) => GRUPO_PAIS[k] ?? "outro";
+const precoValido = (p: string) => !/^\D*0+([.,]0+)?\D*$/.test(p.trim());
+const tomNota = (n: number) => (n >= 8 ? "n-a" : n >= 6.5 ? "n-b" : n >= 5 ? "n-c" : "n-d");
+
+function BarraPaises({ o }: { o: Oferta }) {
+  const lst = Object.entries(o.paises_pct).filter(([, v]) => v > 0);
+  if (!lst.length) return <span className="vazio-cel">sem medição</span>;
+  const top = lst.slice(0, 4);
+  const resto = Math.max(0, 100 - top.reduce((s, [, v]) => s + v, 0));
+  return (
+    <div className="paises-v">
+      <div className="pbar" aria-hidden>
+        {top.map(([k, v]) => <span key={k} className={`seg seg-${corPais(k)}`} style={{ width: `${v}%` }} />)}
+        {resto > 0 && <span className="seg seg-outro" style={{ width: `${resto}%` }} />}
+      </div>
+      <div className="plegenda">
+        {top.slice(0, 3).map(([k, v]) => <span key={k} title={PAIS[k] ?? k}><i className={`seg-${corPais(k)}`} />{k}<b>{v}%</b></span>)}
+      </div>
+    </div>
+  );
 }
 
-function LinhaOferta({ o, i, aberta, abrir, decidir, avisar }: {
-  o: Oferta; i: number; aberta: boolean; abrir: () => void; decidir: (d: Partial<Decisao>) => void; avisar: Ctx["avisar"];
+function Buraco({ o }: { o: Oferta }) {
+  if (!o.buraco.length) return <span className="buraco-off">já roda em FR e DE</span>;
+  return (
+    <span className="buraco-on" title="mercado onde a oferta ainda não roda: é onde você entra">
+      <span className="buraco-tit">Livre em</span>
+      <span className="buraco-merc">{o.buraco.map((b) => <b key={b}>{b === "FR" ? "Francês" : "Alemão"}</b>)}</span>
+    </span>
+  );
+}
+
+function Concorrencia({ o }: { o: Oferta }) {
+  const n = o.n_concorrentes ?? (o.concorrentes?.length || null);
+  if (n == null) return <span className="vazio-cel">—</span>;
+  const tom = n === 0 ? "c-ok" : n <= 2 ? "c-med" : "c-alto";
+  return <span className={`conc-pill ${tom}`} title={(o.concorrentes ?? []).map((c) => c.nome).join(", ") || undefined}>{n === 0 ? "nenhum" : n}</span>;
+}
+
+function LinhaOferta({ o, i, aberta, abrir, decidir, avisar, maxLog }: {
+  o: Oferta; i: number; aberta: boolean; abrir: () => void; decidir: (d: Partial<Decisao>) => void; avisar: Ctx["avisar"]; maxLog: number;
 }) {
   const st = o.decisao.status;
   const notaFinal = o.decisao.nota ?? o.nota;
   const nicho = o.decisao.nicho || o.nicho || "";
-  const obs = o.decisao.obs || o.observacao || "";
   const [obsTxt, setObs] = useState(o.decisao.obs ?? "");
   const [nichoTxt, setNicho] = useState(o.decisao.nicho ?? "");
   useEffect(() => { setObs(o.decisao.obs ?? ""); setNicho(o.decisao.nicho ?? ""); }, [o.chave, o.decisao.obs, o.decisao.nicho]);
   const conc = o.concorrentes ?? [];
+  const precos = o.precos.filter(precoValido);
+  const daPlanilha = (o.fontes ?? []).some((f) => /planilha|sócio|socio/i.test(f));
+  const escala = o.alcance_ue ? Math.max(4, Math.min(100, ((Math.log10(o.alcance_ue) - 3.5) / (maxLog - 3.5)) * 100)) : 0;
+  const validos = o.anuncios ? Math.round((o.anuncios_15d / o.anuncios) * 100) : 0;
+  const top = i < 3 && st !== "descartada";
   return (
     <Fragment>
-      <tr className={`${st === "aprovada" ? "aprovada" : st === "descartada" ? "descartada" : ""}${i < 3 && st !== "descartada" ? " top" : ""}`} onClick={abrir}>
-        <td className="c-pos"><span className={`pos${i < 3 ? " ouro" : ""}`}>{i + 1}</span></td>
-        <td>
-          <span className={`nota ${notaFinal >= 7.5 ? "alta" : notaFinal >= 5 ? "media" : "baixa"}`}>{notaFinal.toLocaleString("pt-BR")}</span>
-          {o.nota_planilha != null && o.nota_planilha !== notaFinal && <span className="meta nota-socio" title="nota dada na planilha">planilha {o.nota_planilha.toLocaleString("pt-BR")}</span>}
+      <tr className={`linha${top ? " top" : ""}${st === "aprovada" ? " aprovada" : ""}${st === "descartada" ? " descartada" : ""}${aberta ? " aberta" : ""}`} onClick={abrir}>
+        <td className="c-pos"><span className={`pos${top ? " ouro" : ""}`}>{i + 1}</span></td>
+        <td className="c-nota">
+          <span className={`nota-anel ${tomNota(notaFinal)}`} title={o.decisao.nota != null ? "sua nota" : "nota automática"}>{notaFinal.toLocaleString("pt-BR")}</span>
+          {o.nota_planilha != null && o.nota_planilha !== notaFinal && <span className="nota-socio" title="nota da planilha do sócio">sócio {o.nota_planilha.toLocaleString("pt-BR")}</span>}
         </td>
         <td className="c-oferta">
-          <strong>{o.oferta}</strong>
-          <span className="meta">{o.anunciante}</span>
-          {i < 3 && st !== "descartada" && <span className="top3">Top 3</span>}
-          {o.bandeiras.length > 0 && (
-            <span className="chips">{o.bandeiras.map((b) => BANDEIRA[b] && <span key={b} className={`tag tag-${BANDEIRA[b].tom} tag-mini`} title={BANDEIRA[b].dica}>{BANDEIRA[b].texto}</span>)}</span>
+          <div className="of-titulo">
+            {st === "aprovada" && <Check size={14} strokeWidth={3} className="of-ok" aria-label="aprovada" />}
+            <strong title={o.oferta}>{o.oferta}</strong>
+          </div>
+          <div className="of-sub">
+            <span className="of-anun" title={o.anunciante}>{o.anunciante}</span>
+            {nicho && <span className="of-nicho" title={nicho}>{nicho}</span>}
+          </div>
+          {(o.bandeiras.length > 0 || daPlanilha) && (
+            <div className="of-tags">
+              {daPlanilha && <span className="tag tag-mini tag-socio" title={(o.fontes ?? []).join(" · ")}>Planilha do sócio</span>}
+              {o.bandeiras.slice(0, 3).map((b) => BANDEIRA[b] && <span key={b} className={`tag tag-${BANDEIRA[b].tom} tag-mini`} title={BANDEIRA[b].dica}>{BANDEIRA[b].texto}</span>)}
+            </div>
           )}
         </td>
-        <td className="c-nicho">{nicho || <span className="meta">—</span>}</td>
-        <td><LinkExterno url={o.biblioteca} texto="Abrir" variante="abrir" avisar={avisar} /></td>
-        <td>{o.landing ? <LinkExterno url={o.landing} texto="Ver" avisar={avisar} /> : <span className="meta">—</span>}</td>
-        <td className="c-origem">
-          {(o.fontes ?? []).map((f) => <span key={f} className="fonte">{f}</span>)}
-          <span className="meta">{o.origem.map((m) => IDIOMA_MERCADO[m] ?? m).join(" · ")}</span>
+        <td className="c-metrica">
+          <strong className="m-num">{pessoas(o.alcance_ue)}</strong>
+          <span className="m-bar" aria-hidden><span style={{ width: `${escala}%` }} /></span>
+          <span className="m-sub">{o.alcance_ue ? "pessoas na UE" : "sem medição"}</span>
         </td>
-        <td className="c-num"><strong>{pessoas(o.alcance_ue)}</strong><span className="meta">{o.alcance_ue ? "pessoas" : "sem medição"}</span></td>
-        <td className="c-num"><strong>{numero(o.anuncios_15d)}</strong><span className="meta">de {numero(o.anuncios)}</span></td>
-        <td className="c-num meta">{data(o.rodando_desde)}<br />{o.max_dias} d</td>
-        <td><Paises o={o} /></td>
-        <td>{o.buraco.length ? <span className="buraco">{o.buraco.map((b) => b === "FR" ? "Francês" : "Alemão").join(" + ")}</span>
-                             : <span className="meta">já roda</span>}</td>
-        <td className="meta c-preco">{o.precos.slice(0, 3).join(" · ") || "—"}</td>
-        <td className="c-conc" onClick={(e) => e.stopPropagation()}>
-          {o.n_concorrentes != null || conc.length ? (
-            <><strong className={conc.length || o.n_concorrentes ? "" : "nenhum"}>{conc.length || o.n_concorrentes ? numero(o.n_concorrentes ?? conc.length) : "nenhum"}</strong>
-              <div className="variacoes">{conc.map((c, k) => c.url ? <LinkExterno key={k} url={c.url} texto={c.nome} avisar={avisar} /> : <span key={k} className="meta">{c.nome}</span>)}</div></>
-          ) : <span className="meta">—</span>}
+        <td className="c-metrica">
+          <strong className="m-num">{numero(o.anuncios_15d)}<small> / {numero(o.anuncios)}</small></strong>
+          <span className="m-bar m-bar-val" aria-hidden><span style={{ width: `${validos}%` }} /></span>
+          <span className="m-sub" title={`no ar desde ${data(o.rodando_desde)}`}>{o.max_dias ? `há ${o.max_dias} d no ar` : "anúncios 15+ dias"}</span>
         </td>
-        <td className="c-var" onClick={(e) => e.stopPropagation()}>
-          <div className="variacoes">
-            {o.variacoes.map((v, k) => <LinkExterno key={k} url={busca(v.termo, v.mercado)} texto={v.termo} avisar={avisar} />)}
-          </div>
+        <td className="c-paises"><BarraPaises o={o} /></td>
+        <td className="c-buraco"><Buraco o={o} /></td>
+        <td className="c-preco" title={precos.join(" · ") || undefined}>
+          {precos.length ? <><span className="preco-1">{precos[0]}</span>{precos.length > 1 && <span className="m-sub">+{precos.length - 1} preço(s)</span>}</> : <span className="vazio-cel">—</span>}
         </td>
-        <td className="c-obs">{obs ? <span className="obs-curta">{obs}</span> : <span className="meta">—</span>}</td>
+        <td className="c-conc2"><Concorrencia o={o} /></td>
+        <td className="c-links" onClick={(e) => e.stopPropagation()}>
+          <LinkExterno url={o.biblioteca} texto="Anúncios" variante="abrir" avisar={avisar} />
+          {o.landing ? <LinkExterno url={o.landing} texto="Landing" avisar={avisar} /> : <span className="vazio-cel">sem landing</span>}
+        </td>
         <td className="c-acoes" onClick={(e) => e.stopPropagation()}>
           <button type="button" className={`btn btn-icon-sm btn-quiet${st === "aprovada" ? " on-ok" : ""}`} aria-pressed={st === "aprovada"}
                   aria-label="Aprovar" title="Aprovar" onClick={() => decidir({ status: st === "aprovada" ? undefined : "aprovada" })}><ThumbsUp size={15} /></button>
           <button type="button" className={`btn btn-icon-sm btn-quiet${st === "descartada" ? " on-no" : ""}`} aria-pressed={st === "descartada"}
                   aria-label="Descartar" title="Descartar" onClick={() => decidir({ status: st === "descartada" ? undefined : "descartada" })}><ThumbsDown size={15} /></button>
-          <button type="button" className="btn btn-icon-sm btn-quiet" aria-expanded={aberta} aria-label="Detalhes" onClick={abrir}>
-            <ChevronDown size={15} className={aberta ? "virado" : ""} /></button>
+          <button type="button" className="btn btn-icon-sm btn-quiet" aria-expanded={aberta} aria-label="Detalhes" title="Detalhes" onClick={abrir}>
+            <ChevronDown size={16} className={aberta ? "virado" : ""} /></button>
         </td>
       </tr>
       {aberta && (
         <tr className="detalhe-linha">
-          <td colSpan={17}>
-            <div className="oferta-detalhe">
-              <div className="od-copy">
-                <span className="label">{o.textos.length ? "Copy dos anúncios" : "Da planilha"}</span>
-                {o.textos.map((t, k) => <p key={k}>{t}</p>)}
-                {o.observacao && <p>{o.observacao}</p>}
-                {(o.formato || o.adaptacao || o.paises_alvo) && (
-                  <div className="dados" style={{ marginTop: 12 }}>
-                    {o.formato && <div><span className="label">Formato</span><strong>{o.formato}</strong></div>}
-                    {o.esforco && <div><span className="label">Esforço p/ recriar</span><strong>{o.esforco}</strong></div>}
-                    {o.aceitacao && <div><span className="label">Aceitação FR</span><strong>{o.aceitacao}</strong></div>}
-                    {o.anuncios_fr != null && <div><span className="label">Em francês (15+ / total)</span><strong>{o.anuncios_fr_15d ?? "—"} / {o.anuncios_fr}</strong></div>}
-                    {o.paises_alvo && <div><span className="label">Países-alvo</span><strong>{o.paises_alvo}</strong></div>}
-                    {o.adaptacao && <div><span className="label">Adaptação</span><strong>{o.adaptacao}</strong></div>}
-                  </div>
+          <td colSpan={11}>
+            <div className="od">
+              <section className="od-col">
+                <h4>{o.textos.length ? "O que o anúncio diz" : "Da planilha"}</h4>
+                {o.textos.slice(0, 2).map((t, k) => <p key={k} className="od-copy-p">{t}</p>)}
+                {o.observacao && <p className="od-copy-p">{o.observacao}</p>}
+                {o.titulo_landing && <p className="od-meta">Landing: <b>{o.titulo_landing}</b></p>}
+                {o.landing_erro && <p className="od-meta">A landing não abriu fora do anúncio: abra pelo anúncio na biblioteca.</p>}
+                {o.variacoes.length > 0 && (
+                  <>
+                    <h4>Termos que acharam esta oferta</h4>
+                    <div className="od-chips">{o.variacoes.map((v, k) => <LinkExterno key={k} url={busca(v.termo, v.mercado)} texto={v.termo} avisar={avisar} />)}</div>
+                  </>
                 )}
-                {o.titulo_landing && <p className="meta">Landing: {o.titulo_landing}</p>}
-                {o.landing_erro && <p className="meta">A landing não abriu fora do anúncio ({o.landing_erro}): abra pelo anúncio na biblioteca.</p>}
-              </div>
-              <div className="od-dados">
-                <div className="dados">
-                  <div><span className="label">Alcance 15+ dias</span><strong>{pessoas(o.alcance_15d)}</strong></div>
-                  <div><span className="label">Presença FR / DE</span><strong>{o.presenca.FR ?? 0}% / {o.presenca.DE ?? 0}%</strong></div>
-                  <div><span className="label">Idiomas</span><strong>{Object.entries(o.idiomas).map(([k, v]) => `${k} ${v}`).join(" · ") || "—"}</strong></div>
-                  <div><span className="label">{o.nota_planilha != null ? "Nota da planilha" : "Nota automática"}</span><strong>{(o.nota_planilha ?? o.nota).toLocaleString("pt-BR")}</strong></div>
-                </div>
+              </section>
+              <section className="od-col">
+                <h4>Números</h4>
+                <dl className="od-dl">
+                  <dt>Alcance de anúncios com 15+ dias</dt><dd>{pessoas(o.alcance_15d)}</dd>
+                  <dt>No ar desde</dt><dd>{data(o.rodando_desde)} · {o.max_dias} dias</dd>
+                  <dt>Presença em francês / alemão</dt><dd>{o.presenca.FR ?? 0}% / {o.presenca.DE ?? 0}%</dd>
+                  <dt>Países</dt><dd>{Object.entries(o.paises_pct).filter(([, v]) => v > 0).map(([k, v]) => `${PAIS[k] ?? k} ${v}%`).join(" · ") || "—"}</dd>
+                  <dt>Idiomas dos anúncios</dt><dd>{Object.entries(o.idiomas).map(([k, v]) => `${k} ${v}`).join(" · ") || "—"}</dd>
+                  <dt>Preços na landing</dt><dd>{precos.join(" · ") || "—"}</dd>
+                  {o.formato && <><dt>Formato</dt><dd>{o.formato}</dd></>}
+                  {o.anuncios_fr != null && <><dt>Em francês (15+ / total)</dt><dd>{o.anuncios_fr_15d ?? "—"} / {o.anuncios_fr}</dd></>}
+                  {o.esforco && <><dt>Esforço para recriar</dt><dd>{o.esforco}</dd></>}
+                  {o.aceitacao && <><dt>Aceitação no francês</dt><dd>{o.aceitacao}</dd></>}
+                  {o.paises_alvo && <><dt>Países-alvo</dt><dd>{o.paises_alvo}</dd></>}
+                  <dt>Origem</dt><dd>{(o.fontes ?? []).join(" · ") || "—"} · {o.origem.map((m) => IDIOMA_MERCADO[m] ?? m).join(", ")}</dd>
+                </dl>
+                {conc.length > 0 && (
+                  <>
+                    <h4>Concorrentes ({conc.length})</h4>
+                    <ul className="od-conc">{conc.map((c, k) => <li key={k}>{c.url ? <LinkExterno url={c.url} texto={c.nome} avisar={avisar} /> : c.nome}{c.obs && <span>{c.obs}</span>}</li>)}</ul>
+                  </>
+                )}
                 {o.bibliotecas.length > 1 && (
-                  <div className="acoes">{o.bibliotecas.map((b, k) => <LinkExterno key={k} url={b.url} texto={b.nome} avisar={avisar} />)}</div>
+                  <><h4>Outras páginas da mesma oferta</h4>
+                    <div className="od-chips">{o.bibliotecas.slice(1).map((b, k) => <LinkExterno key={k} url={b.url} texto={b.nome} avisar={avisar} />)}</div></>
                 )}
-                <div className="duas">
-                  <label className="campo-grupo"><span className="label">Nicho</span>
-                    <input className="campo" value={nichoTxt} placeholder={o.nicho || "ex.: atividades para idosos"} onChange={(e) => setNicho(e.target.value)}
-                           onBlur={() => nichoTxt !== (o.decisao.nicho ?? "") && decidir({ nicho: nichoTxt })} /></label>
-                  <label className="campo-grupo"><span className="label">Sua nota (0 a 10)</span>
-                    <input className="campo" type="number" min={0} max={10} step={0.5} defaultValue={o.decisao.nota ?? ""} placeholder={String(o.nota)}
-                           onBlur={(e) => { const v = e.target.value === "" ? undefined : Math.max(0, Math.min(10, +e.target.value)); if (v !== o.decisao.nota) decidir({ nota: v }); }} /></label>
+              </section>
+              <section className="od-col od-sua">
+                <h4>Sua avaliação</h4>
+                <div className="acoes">
+                  <button type="button" className={`btn btn-sm ${st === "aprovada" ? "btn-ok-on" : "btn-ghost"}`} onClick={() => decidir({ status: st === "aprovada" ? undefined : "aprovada" })}>
+                    <ThumbsUp size={14} aria-hidden />{st === "aprovada" ? "Aprovada" : "Aprovar"}</button>
+                  <button type="button" className={`btn btn-sm ${st === "descartada" ? "btn-stop" : "btn-ghost"}`} onClick={() => decidir({ status: st === "descartada" ? undefined : "descartada" })}>
+                    <ThumbsDown size={14} aria-hidden />{st === "descartada" ? "Descartada" : "Descartar"}</button>
                 </div>
+                <label className="campo-grupo"><span className="label">Nicho</span>
+                  <input className="campo" value={nichoTxt} placeholder={o.nicho || "ex.: atividades para idosos"} onChange={(e) => setNicho(e.target.value)}
+                         onBlur={() => nichoTxt !== (o.decisao.nicho ?? "") && decidir({ nicho: nichoTxt })} /></label>
+                <label className="campo-grupo"><span className="label">Sua nota (0 a 10) · automática {o.nota.toLocaleString("pt-BR")}</span>
+                  <input className="campo" type="number" min={0} max={10} step={0.5} defaultValue={o.decisao.nota ?? ""} placeholder={String(o.nota)}
+                         onBlur={(e) => { const v = e.target.value === "" ? undefined : Math.max(0, Math.min(10, +e.target.value)); if (v !== o.decisao.nota) decidir({ nota: v }); }} /></label>
                 <label className="campo-grupo"><span className="label">Observação</span>
-                  <input className="campo" value={obsTxt} placeholder="o que muda para FR/DE, concorrentes que você achou…" onChange={(e) => setObs(e.target.value)}
-                         onBlur={() => obsTxt !== (o.decisao.obs ?? "") && decidir({ obs: obsTxt })} /></label>
-              </div>
+                  <textarea className="campo od-obs" rows={3} value={obsTxt} placeholder="o que muda para FR/DE, concorrentes que você achou…" onChange={(e) => setObs(e.target.value)}
+                            onBlur={() => obsTxt !== (o.decisao.obs ?? "") && decidir({ obs: obsTxt })} /></label>
+              </section>
             </div>
           </td>
         </tr>
@@ -494,6 +555,7 @@ function TabelaOfertas({ ofertas, ctx, mudar }: { ofertas: Oferta[]; ctx: Ctx; m
     aprovadas: ofertas.filter((o) => o.decisao.status === "aprovada").length,
     descartadas: ofertas.filter((o) => o.decisao.status === "descartada").length,
   };
+  const maxLog = useMemo(() => Math.max(5, ...ofertas.map((o) => (o.alcance_ue ? Math.log10(o.alcance_ue) : 0))), [ofertas]);
   const lista = useMemo(() => {
     const t = q.trim().toLowerCase();
     return ofertas
@@ -503,32 +565,39 @@ function TabelaOfertas({ ofertas, ctx, mudar }: { ofertas: Oferta[]; ctx: Ctx; m
       .sort((a, b) => ordem === "alcance" ? b.alcance_ue - a.alcance_ue : ordem === "anuncios_15d" ? b.anuncios_15d - a.anuncios_15d :
                       ordem === "desde" ? b.max_dias - a.max_dias : (b.decisao.nota ?? b.nota) - (a.decisao.nota ?? a.nota) || b.alcance_ue - a.alcance_ue);
   }, [ofertas, aba, q, ordem]);
-  const cab = (id: Ordem, texto: string) => (
-    <button type="button" className="th-ord" aria-pressed={ordem === id} onClick={() => setOrdem(id)}>{texto}{ordem === id ? " ▼" : ""}</button>
+  const cab = (id: Ordem, texto: string, dica: string) => (
+    <button type="button" className="th-ord" aria-pressed={ordem === id} onClick={() => setOrdem(id)} title={`ordenar por ${dica}`}>
+      {texto}<span className="th-seta" aria-hidden>{ordem === id ? "▼" : "↕"}</span></button>
   );
   return (
     <section className="grupo" aria-label="Ofertas mineradas">
       <div className="tabela-topo">
         <div className="seg" role="group" aria-label="Filtro">
-          {([["todas", "Todas"], ["FR", "Buraco em francês"], ["DE", "Buraco em alemão"], ["aprovadas", "Aprovadas"], ["descartadas", "Descartadas"]] as [Aba, string][]).map(([k, t]) => (
+          {([["todas", "Todas"], ["FR", "Livre em francês"], ["DE", "Livre em alemão"], ["aprovadas", "Aprovadas"], ["descartadas", "Descartadas"]] as [Aba, string][]).map(([k, t]) => (
             <button key={k} type="button" aria-pressed={aba === k} onClick={() => setAba(k)}>{t} <span className="seg-n">{conta[k]}</span></button>
           ))}
         </div>
         <label className="busca"><Search size={15} aria-hidden />
           <input className="campo" placeholder="Buscar oferta, nicho, anunciante…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar" /></label>
       </div>
+      <div className="legenda-tabela" aria-hidden>
+        <span><i className="seg-fr" />França / Bélgica</span><span><i className="seg-de" />Alemanha / Áustria</span>
+        <span><i className="seg-pt" />Portugal</span><span><i className="seg-es" />Espanha</span><span><i className="seg-it" />Itália</span><span><i className="seg-outro" />outros</span>
+        <span className="leg-sep">Clique na linha para ver copy, números completos e concorrentes.</span>
+      </div>
       <div className="panel tabela-wrap">
-        <table className="tabela-ofertas">
+        <table className="tabela-ofertas t2">
           <thead>
             <tr>
-              <th>#</th><th>{cab("nota", "Nota")}</th><th>Oferta</th><th>Nicho</th><th>Biblioteca</th><th>Landing</th><th>Origem</th>
-              <th>{cab("alcance", "Alcance UE")}</th><th>{cab("anuncios_15d", "15+ dias")}</th><th>{cab("desde", "Rodando desde")}</th>
-              <th>Onde roda</th><th>Buraco</th><th>Preço</th><th>Concorrentes</th><th>Variações pesquisadas</th><th>Observação</th><th><span className="sr">Ações</span></th>
+              <th className="w-pos">#</th><th className="w-nota">{cab("nota", "Nota", "nota")}</th><th className="w-oferta">Oferta</th>
+              <th className="w-met">{cab("alcance", "Escala", "alcance real na UE")}</th><th className="w-met">{cab("anuncios_15d", "Validação", "anúncios com 15+ dias")}</th>
+              <th className="w-paises">Onde roda</th><th className="w-buraco">Buraco</th><th className="w-preco c-preco">Preço</th>
+              <th className="w-conc c-conc2" title="concorrentes vendendo o mesmo produto">Concorr.</th><th className="w-links">Abrir</th><th className="w-acoes"><span className="sr">Ações</span></th>
             </tr>
           </thead>
           <tbody>
             {lista.map((o, i) => (
-              <LinhaOferta key={o.chave} o={o} i={i} aberta={aberta === o.chave} avisar={ctx.avisar}
+              <LinhaOferta key={o.chave} o={o} i={i} aberta={aberta === o.chave} avisar={ctx.avisar} maxLog={maxLog}
                            abrir={() => setAberta(aberta === o.chave ? null : o.chave)} decidir={(d) => mudar(o.chave, d)} />
             ))}
           </tbody>
