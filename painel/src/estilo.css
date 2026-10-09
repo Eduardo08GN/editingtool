@@ -460,7 +460,8 @@ textarea.campo.termos-novos { min-height: 84px; }
 .nova-mineracao .seg button { min-height: 32px; padding: 0 12px; }
 
 /* ══ MINERACAO · tabela v2: leitura de relance ══════════════════════════════════════════════ */
-.tabela-wrap { overflow: clip; }                                   /* clip (nao scroll): o cabecalho gruda no topo ao rolar */
+/* a tabela rola dentro da propria caixa: cabecalho fixo e, com colunas largas, rolagem para o lado */
+.tabela-wrap { overflow: auto; max-height: calc(100vh - 120px); overscroll-behavior: contain; }
 .t2 { min-width: 0; table-layout: fixed; }
 .t2 thead th { z-index: 3; padding: 11px 12px; background: #0B1716; }
 .t2 .w-pos { width: 38px; } .t2 .w-nota { width: 66px; } .t2 .w-met { width: 112px; } .t2 .w-paises { width: 152px; }
@@ -570,6 +571,18 @@ textarea.campo.termos-novos { min-height: 84px; }
 textarea.campo.od-obs { min-height: 76px; font: 400 13px/1.5 var(--ow-font-body); }
 .btn-ok-on { background: var(--ow-green); color: var(--ow-green-ink); border: 0; }
 
-@media (max-width: 1480px) { .t2 .c-preco, .t2 .w-preco { display: none; } }
-@media (max-width: 1340px) { .t2 .c-conc2, .t2 .w-conc { display: none; } .od { grid-template-columns: 1fr 1fr; } .od-sua { grid-column: 1 / -1; } }
-@media (max-width: 1180px) { .t2 .c-paises, .t2 .w-paises { display: none; } }
+@media (max-width: 1480px) { .t2:not(.manual) .c-preco, .t2:not(.manual) .w-preco { display: none; } }
+@media (max-width: 1340px) { .t2:not(.manual) .c-conc2, .t2:not(.manual) .w-conc { display: none; } .od { grid-template-columns: 1fr 1fr; } .od-sua { grid-column: 1 / -1; } }
+@media (max-width: 1180px) { .t2:not(.manual) .c-paises, .t2:not(.manual) .w-paises { display: none; } }
+
+/* colunas com largura ajustavel (arrastar a borda do titulo) */
+.t2 thead th { white-space: nowrap; }
+.t2 .th-txt { display: block; overflow: hidden; text-overflow: ellipsis; }
+.t2.manual td { overflow: hidden; }
+.col-alca { position: absolute; top: 0; right: 0; width: 12px; height: 100%; z-index: 4; cursor: col-resize; touch-action: none; outline: none; }
+.col-alca::after { content: ""; position: absolute; top: 28%; bottom: 28%; right: 0; width: 2px; border-radius: 1px;
+  background: var(--ow-line-strong); transition: background var(--ow-fast), top var(--ow-fast), bottom var(--ow-fast); }
+.t2 thead th:hover .col-alca::after { background: var(--ow-text-3); }
+.col-alca:hover::after, .col-alca:focus-visible::after, .col-alca:active::after { background: var(--ow-sun); top: 0; bottom: 0; }
+body.redimensionando, body.redimensionando * { cursor: col-resize !important; user-select: none !important; }
+.legenda-tabela .btn-sm { min-height: 26px; padding: 0 9px; font-size: 12px; }

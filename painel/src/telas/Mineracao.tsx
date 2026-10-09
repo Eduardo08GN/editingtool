@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as TeclaReact, type PointerEvent as PonteiroReact, type ReactNode } from "react";
 import { AlertTriangle, Check, ChevronDown, ExternalLink, FileUp, Pickaxe, Play, Plus, RotateCcw, Search, Square, ThumbsDown, ThumbsUp, Trash2, X } from "lucide-react";
 import { abrirLink, enviar, ler, type BancoTermos, type Decisao, type EstadoMineracao, type FaseMineracao, type Oferta, type RodadaMineracao } from "../api";
 import type { Ctx } from "../App";
@@ -543,7 +543,64 @@ function LinhaOferta({ o, i, aberta, abrir, decidir, avisar, maxLog }: {
   );
 }
 
+// ⭐ largura das colunas ajustavel: arrastar a borda do cabecalho (ou setas do teclado na alca).
+//    Sem ajuste, a tabela ocupa a largura toda e a Oferta pega o que sobra. Com ajuste, a tabela passa a ter
+//    a soma das larguras escolhidas (rola para o lado se passar da tela). Fica lembrado no navegador.
+const COLUNAS = ["pos", "nota", "oferta", "escala", "valid", "paises", "buraco", "preco", "conc", "links", "acoes"] as const;
+type Coluna = (typeof COLUNAS)[number];
+type Larguras = Record<Coluna, number>;
+const LARGURA_MIN: Larguras = { pos: 32, nota: 56, oferta: 150, escala: 88, valid: 88, paises: 110, buraco: 92, preco: 70, conc: 62, links: 92, acoes: 96 };
+const LARGURA_PADRAO: Larguras = { pos: 38, nota: 66, oferta: 380, escala: 112, valid: 112, paises: 152, buraco: 108, preco: 98, conc: 74, links: 108, acoes: 104 };
+
+function useColunas() {
+  const [larg, setLarg] = useState<Larguras | null>(() => guardado<Larguras | null>("edt_colunas", null));
+  const tabela = useRef<HTMLTableElement>(null);
+  const medir = (): Larguras => {
+    const out = { ...LARGURA_PADRAO };
+    tabela.current?.querySelectorAll<HTMLElement>("thead th[data-col]").forEach((th) => {
+      const w = Math.round(th.getBoundingClientRect().width);
+      if (w > 0) out[th.dataset.col as Coluna] = w;                 // coluna escondida (tela estreita) fica no padrao
+    });
+    return out;
+  };
+  const definir = (novo: Larguras | null) => { setLarg(novo); guardar("edt_colunas", novo); };
+  const arrastar = (col: Coluna, e: PonteiroReact) => {
+    if (e.button !== 0) return;
+    e.preventDefault(); e.stopPropagation();
+    const base = larg ?? medir();
+    const x0 = e.clientX, w0 = base[col];
+    let ultimo = base;
+    document.body.classList.add("redimensionando");
+    const mover = (ev: PointerEvent) => { ultimo = { ...base, [col]: Math.max(LARGURA_MIN[col], Math.round(w0 + ev.clientX - x0)) }; setLarg(ultimo); };
+    const soltar = () => {
+      window.removeEventListener("pointermove", mover); window.removeEventListener("pointerup", soltar);
+      document.body.classList.remove("redimensionando"); definir(ultimo);
+    };
+    window.addEventListener("pointermove", mover); window.addEventListener("pointerup", soltar);
+  };
+  const teclado = (col: Coluna, e: TeclaReact) => {
+    const passo = e.key === "ArrowLeft" ? -16 : e.key === "ArrowRight" ? 16 : 0;
+    if (!passo) return;
+    e.preventDefault();
+    const base = larg ?? medir();
+    definir({ ...base, [col]: Math.max(LARGURA_MIN[col], base[col] + passo) });
+  };
+  const padrao = (col: Coluna) => { const base = larg ?? medir(); definir({ ...base, [col]: LARGURA_PADRAO[col] }); };
+  const soma = larg ? COLUNAS.reduce((s, c) => s + larg[c], 0) : null;
+  return { larg, soma, tabela, arrastar, teclado, padrao, restaurar: () => definir(null) };
+}
+
 function TabelaOfertas({ ofertas, ctx, mudar }: { ofertas: Oferta[]; ctx: Ctx; mudar: (chave: string, d: Partial<Decisao>) => void }) {
+  const cols = useColunas();
+  const th = (col: Coluna, classe: string, rotulo: string, conteudo: ReactNode, titulo?: string) => (
+    <th data-col={col} className={classe} style={cols.larg ? { width: cols.larg[col] } : undefined} title={titulo}>
+      <span className="th-txt">{conteudo}</span>
+      <span className="col-alca" role="separator" aria-orientation="vertical" aria-label={`Largura da coluna ${rotulo}`} tabIndex={0}
+            title="Arraste para ajustar a largura · duplo clique volta ao padrão"
+            onPointerDown={(e) => cols.arrastar(col, e)} onDoubleClick={() => cols.padrao(col)} onKeyDown={(e) => cols.teclado(col, e)}
+            onClick={(e) => e.stopPropagation()} />
+    </th>
+  );
   const [aba, setAba] = useState<Aba>("todas");
   const [q, setQ] = useState("");
   const [ordem, setOrdem] = useState<Ordem>("nota");
@@ -580,19 +637,31 @@ function TabelaOfertas({ ofertas, ctx, mudar }: { ofertas: Oferta[]; ctx: Ctx; m
         <label className="busca"><Search size={15} aria-hidden />
           <input className="campo" placeholder="Buscar oferta, nicho, anunciante…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Buscar" /></label>
       </div>
-      <div className="legenda-tabela" aria-hidden>
-        <span><i className="seg-fr" />França / Bélgica</span><span><i className="seg-de" />Alemanha / Áustria</span>
-        <span><i className="seg-pt" />Portugal</span><span><i className="seg-es" />Espanha</span><span><i className="seg-it" />Itália</span><span><i className="seg-outro" />outros</span>
-        <span className="leg-sep">Clique na linha para ver copy, números completos e concorrentes.</span>
+      <div className="legenda-tabela">
+        <span aria-hidden><i className="seg-fr" />França / Bélgica</span><span aria-hidden><i className="seg-de" />Alemanha / Áustria</span>
+        <span aria-hidden><i className="seg-pt" />Portugal</span><span aria-hidden><i className="seg-es" />Espanha</span>
+        <span aria-hidden><i className="seg-it" />Itália</span><span aria-hidden><i className="seg-outro" />outros</span>
+        <span className="leg-sep">Clique na linha para ver os detalhes · arraste a borda do título para ajustar a coluna.</span>
+        {cols.larg && (
+          <button type="button" className="btn btn-quiet btn-sm" onClick={cols.restaurar} title="volta todas as colunas à largura automática">
+            <RotateCcw size={13} aria-hidden />Restaurar colunas</button>
+        )}
       </div>
       <div className="panel tabela-wrap">
-        <table className="tabela-ofertas t2">
+        <table ref={cols.tabela} className={`tabela-ofertas t2${cols.larg ? " manual" : ""}`} style={cols.soma ? { width: cols.soma } : undefined}>
           <thead>
             <tr>
-              <th className="w-pos">#</th><th className="w-nota">{cab("nota", "Nota", "nota")}</th><th className="w-oferta">Oferta</th>
-              <th className="w-met">{cab("alcance", "Escala", "alcance real na UE")}</th><th className="w-met">{cab("anuncios_15d", "Validação", "anúncios com 15+ dias")}</th>
-              <th className="w-paises">Onde roda</th><th className="w-buraco">Buraco</th><th className="w-preco c-preco">Preço</th>
-              <th className="w-conc c-conc2" title="concorrentes vendendo o mesmo produto">Concorr.</th><th className="w-links">Abrir</th><th className="w-acoes"><span className="sr">Ações</span></th>
+              {th("pos", "w-pos", "posição", "#")}
+              {th("nota", "w-nota", "nota", cab("nota", "Nota", "nota"))}
+              {th("oferta", "w-oferta", "oferta", "Oferta")}
+              {th("escala", "w-met", "escala", cab("alcance", "Escala", "alcance real na UE"))}
+              {th("valid", "w-met", "validação", cab("anuncios_15d", "Validação", "anúncios com 15+ dias"))}
+              {th("paises", "w-paises", "onde roda", "Onde roda")}
+              {th("buraco", "w-buraco", "buraco", "Buraco")}
+              {th("preco", "w-preco c-preco", "preço", "Preço")}
+              {th("conc", "w-conc c-conc2", "concorrentes", "Concorr.", "concorrentes vendendo o mesmo produto")}
+              {th("links", "w-links", "abrir", "Abrir")}
+              {th("acoes", "w-acoes", "ações", <span className="sr">Ações</span>)}
             </tr>
           </thead>
           <tbody>
