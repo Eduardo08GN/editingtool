@@ -2,7 +2,15 @@
 faster-whisper>=1.1
 Pillow>=10
 numpy
+# painel (python edt.py painel / EditingTool.cmd)
+fastapi>=0.110
+uvicorn>=0.29
+pydantic>=2
+# recomendados
+gdown              # python edt.py sfx sync (baixa o pool de SFX do Drive)
 # opcionais
-# gdown            -> python edt.py sfx sync (baixa o pool de SFX do Drive)
+# torch torchaudio (CPU) -> legenda mais precisa (alinhamento fino MMS_FA); sem eles fica o whisper
+#   pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 # kokoro soundfile -> TTS local gratis para teste (--tts kokoro)
 # torch speechbrain librosa -> ferramentas/voz_parecida.py
+# opencv-python rapidocr_onnxruntime -> limpar legenda queimada do video base (editor/limpar.py)

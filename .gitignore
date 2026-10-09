@@ -15,3 +15,6 @@ painel/node_modules/
 
 # dados da aba Mineracao (anuncios coletados, ofertas, decisoes)
 mineracao/
+
+# pacotes para mandar a outra maquina (ex.: musica-biblioteca.zip)
+*.zip

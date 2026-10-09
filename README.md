@@ -17,6 +17,8 @@ Quem opera é o Claude Code: leia o [`CLAUDE.md`](CLAUDE.md), que é o motor. De
 
 ## Instalação
 
+PC novo (passo a passo para um agente instalar sozinho): [`docs/INSTALACAO.md`](docs/INSTALACAO.md).
+
 ```bash
 pip install -r requirements.txt
 ```
