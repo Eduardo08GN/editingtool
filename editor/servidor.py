@@ -459,8 +459,11 @@ def criar_app(token, hosts):
         @app.get("/{resto:path}")
         def spa(resto: str):
             alvo = os.path.realpath(os.path.join(PAINEL, resto))
-            if resto and alvo.startswith(os.path.realpath(PAINEL)) and os.path.isfile(alvo): return FileResponse(alvo)
-            return FileResponse(os.path.join(PAINEL, "index.html"))
+            if resto and alvo.startswith(os.path.realpath(PAINEL)) and os.path.isfile(alvo) and not resto.endswith("index.html"):
+                return FileResponse(alvo)
+            # ⛔ 2026-10-09: o Edge guardava o index.html antigo e a janela abria sem a aba nova depois de atualizar.
+            #    index.html sempre revalida; os assets tem hash no nome e podem ficar em cache.
+            return FileResponse(os.path.join(PAINEL, "index.html"), headers={"Cache-Control": "no-cache, no-store, must-revalidate"})
     return app
 
 
