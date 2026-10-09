@@ -139,6 +139,15 @@ def test_mineracao_buraco_e_nota():
     assert mineracao.nota({**base, "buraco": [], "presenca": {"FR": 60, "DE": 40}}) < alta
 
 
+def test_mineracao_le_planilha_do_time():
+    from editor import mineracao
+    js = ('window.OFERTAS = window.OFERTAS || {};\n'
+          'window.OFERTAS["fr"] = [{"oferta": "Kit", "nota": 8, "biblioteca": "x?view_all_page_id=12"}];\n')
+    itens = mineracao.ler_planilha(js)
+    assert itens[0]["oferta"] == "Kit" and mineracao.ler_planilha('[{"oferta": "A"}]')[0]["oferta"] == "A"
+    assert mineracao._host("https://www.Exemplo.fr/fr/?a=1") == "exemplo.fr"
+
+
 if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)

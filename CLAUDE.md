@@ -60,6 +60,10 @@ dados: `mineracao/rodadas/<id>/` (fora do git) · decisoes do operador: `minerac
   Isca gratis, Assinatura/app, Fisico?, Ticket alto).
 - Nota = escala 40% + persistencia (anuncios 15+ dias) 20% + buraco FR/DE 25% + cara de digital 15%, menos as bandeiras.
   E' triagem: o operador abre biblioteca e landing (botoes da tabela, abrem no navegador padrao) e aprova/descarta.
+- **Painel:** "Nova mineracao" mostra os termos por mercado e camada (liga/desliga, com a traducao) e aceita termos
+  digitados (ficam em `mineracao/termos_extras.json`) · "Importar planilha" traz o `dados-*.js` da Planilha de Ofertas
+  do socio (cada oferta e' medida na API; nota/nicho/concorrentes da planilha ficam) · "Todas as rodadas" junta tudo
+  por dominio · lixeira exclui uma rodada (com confirmacao; as decisoes ficam).
 - ⛔ A API so' devolve anuncio comercial veiculado na UE/Reino Unido. Oferta que roda so' no Brasil/EUA nao aparece.
 - ⛔ `META_TOKEN` mora no `.env` (nunca em log, tela, commit ou linha de comando). Token vencido = erro "code 190": troque no `.env`.
 
@@ -83,6 +87,7 @@ dados: `mineracao/rodadas/<id>/` (fora do git) · decisoes do operador: `minerac
 | achar a voz MiniMax mais parecida com um vídeo | `python ferramentas/voz_parecida.py <video_ou_audio>` |
 | garimpar ofertas (FR, DE e Portugal) | `python edt.py minerar [--mercados FR,DE,PT] [--finalistas 40]` |
 | retomar uma rodada / refazer a análise | `python edt.py minerar --rodada <id>` |
+| importar a planilha de garimpo do sócio | `python edt.py minerar --importar-planilha <dados-frances.js> [--nome "..."]` |
 
 Base com texto queimado (só em emergência): `--borrar-faixa 0.63:0.80` borra a faixa;
 `--janela 0:33` usa só esse trecho do base (ex.: para fugir de um CTA antigo no fim).

@@ -52,10 +52,14 @@ def main(argv):
     p = sub.add_parser("painel"); p.add_argument("--porta", type=int, default=8791); p.add_argument("--sem-janela", action="store_true")
     p = sub.add_parser("minerar"); p.add_argument("--mercados", default="FR,DE,PT"); p.add_argument("--max", type=int, default=1000)
     p.add_argument("--finalistas", type=int, default=40); p.add_argument("--rodada", help="retoma esta rodada em vez de abrir outra")
+    p.add_argument("--importar-planilha", dest="planilha", help="dados-*.js da Planilha de Ofertas do time"); p.add_argument("--nome", default="Garimpo do sócio")
     a = ap.parse_args(argv)
 
     if a.cmd == "minerar":
         from editor import mineracao
+        if a.planilha:
+            rid, ofs = mineracao.importar_planilha(mineracao.ler_planilha(open(a.planilha, encoding="utf-8").read()), a.nome)
+            print(f"{len(ofs)} ofertas importadas na rodada {rid}"); return 0
         if a.rodada:
             rid = a.rodada
             if not mineracao.meta(rid): raise SystemExit(f"rodada {rid} nao existe")

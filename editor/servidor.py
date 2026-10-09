@@ -250,6 +250,22 @@ class Minerar(BaseModel):
     mercados: list = ["FR", "DE", "PT"]
     max_por_termo: int = 1000
     finalistas: int = 40
+    termos: dict | None = None          # {mercado: [termo, ...]} escolhidos no painel
+
+
+class Extras(BaseModel):
+    mercado: str
+    termos: list
+
+
+class RemoverExtra(BaseModel):
+    mercado: str
+    termo: str
+
+
+class Planilha(BaseModel):
+    nome: str = "Garimpo do sócio"
+    texto: str
 
 
 class Rodada(BaseModel):
@@ -401,21 +417,47 @@ def criar_app(token, hosts):
 
     @app.get("/api/mineracao/rodadas/{rid}")
     def get_rodada(rid: str):
+        if rid == "_todas":
+            return {"rodada": None, "ofertas": mineracao.ofertas_todas()}
         m = mineracao.meta(rid)
         if not m: raise HTTPException(404, "rodada nao existe")
         return {"rodada": m, "ofertas": mineracao.ofertas(rid)}
 
     @app.get("/api/mineracao/termos")
     def get_termos():
-        return mineracao.banco()
+        return mineracao.banco_completo()
+
+    @app.post("/api/mineracao/termos/extras")
+    def post_extras(b: Extras):
+        return {"ok": True, "novos": mineracao.adicionar_extras(b.mercado, b.termos)}
+
+    @app.post("/api/mineracao/termos/remover")
+    def post_remover_extra(b: RemoverExtra):
+        mineracao.remover_extra(b.mercado, b.termo); return {"ok": True}
+
+    @app.post("/api/mineracao/excluir")
+    def post_excluir_rodada(b: Rodada):
+        mineracao.excluir_rodada(b.rodada)
+        mineracao.MINERADOR.log(f"rodada {b.rodada} excluida")
+        return {"ok": True}
+
+    @app.post("/api/mineracao/importar-planilha")
+    def post_importar_planilha(b: Planilha):
+        if mineracao.MINERADOR.rodando: raise HTTPException(409, "espere a mineracao atual terminar")
+        itens = mineracao.ler_planilha(b.texto)
+        if not itens: raise HTTPException(400, "a planilha nao tem ofertas")
+        mineracao.MINERADOR.importar(itens, b.nome.strip() or "Planilha importada")
+        return {"ok": True, "ofertas": len(itens)}
 
     @app.post("/api/mineracao/iniciar")
     def post_minerar(b: Minerar):
         if mineracao.MINERADOR.rodando: raise HTTPException(409, "ja' existe uma mineracao rodando")
         if not mineracao.tem_token(): raise HTTPException(400, "falta o META_TOKEN no .env (token da Biblioteca de Anuncios)")
         merc = [m for m in b.mercados if m in mineracao.banco()["mercados"]]
-        if not merc: raise HTTPException(400, "escolha pelo menos um mercado")
-        r = mineracao.nova_rodada(merc, max(100, min(b.max_por_termo, 3000)), max(5, min(b.finalistas, 120)))
+        if b.termos is not None:
+            merc = [m for m in merc if b.termos.get(m)]
+        if not merc: raise HTTPException(400, "escolha pelo menos um mercado com termos marcados")
+        r = mineracao.nova_rodada(merc, max(100, min(b.max_por_termo, 3000)), max(5, min(b.finalistas, 120)), b.termos)
         mineracao.MINERADOR.iniciar(r["id"])
         mineracao.MINERADOR.log(f"mineracao comecou: {', '.join(merc)}")
         return {"ok": True, "rodada": r["id"]}

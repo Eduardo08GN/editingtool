@@ -70,6 +70,13 @@ export type FaseMineracao = "coleta" | "grupos" | "medicao" | "landing" | "ofert
 export interface RodadaMineracao {
   id: string; criada: string; mercados: string[]; max_por_termo: number; finalistas: number;
   fase: FaseMineracao; status: "rodando" | "pronta" | "parada" | "erro"; erro?: string | null; ofertas?: number; nota?: string;
+  nome?: string; tipo?: "planilha"; n_termos?: number | null;
+}
+
+// [termo, traducao em portugues, camada]
+export interface BancoTermos {
+  mercados: Record<string, { nome: string; paises: string[]; idioma: string }>;
+  termos: Record<string, [string, string, string][]>;
 }
 
 export interface EstadoMineracao {
@@ -87,7 +94,11 @@ export interface Oferta {
   alcance_ue: number; alcance_15d: number; anuncios: number; anuncios_15d: number; max_dias: number; rodando_desde: string;
   paises_pct: Record<string, number>; idiomas: Record<string, number>; presenca: Record<string, number>; buraco: string[];
   precos: string[]; preco_min: number | null; digital: number; bandeiras: string[]; textos: string[]; titulos: string[];
-  nota: number; decisao: Decisao;
+  nota: number; decisao: Decisao; fontes?: string[];
+  // vindos da planilha de garimpo do time (quando a oferta foi importada de la')
+  nicho?: string; formato?: string; observacao?: string; nota_planilha?: number | null;
+  concorrentes?: { nome: string; url?: string; obs?: string }[]; n_concorrentes?: number | null;
+  anuncios_fr?: number | null; anuncios_fr_15d?: number | null; esforco?: string; aceitacao?: string; adaptacao?: string; paises_alvo?: string;
 }
 
 // ⭐ biblioteca/landing abrem no navegador PADRAO do operador (logado), nao na janela da ferramenta

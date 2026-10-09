@@ -82,8 +82,46 @@ class Parado(Exception):
 
 
 # ── banco de termos, rodadas e decisoes ──────────────────────────────────────
+EXTRAS = os.path.join(DIR, "termos_extras.json")
+
+
 def banco():
     return config.ler_json(BANCO) or {"mercados": {}, "termos": {}, "alvos": ["FR", "DE"]}
+
+
+def termos_extras():
+    """Termos que o operador digitou no painel (por mercado). Ficam fora do git, ao lado dos dados."""
+    return config.ler_json(EXTRAS, {}) or {}
+
+
+def banco_completo():
+    """O banco do repositorio + os termos do operador (camada "extra", sem traducao)."""
+    b = banco()
+    ext = termos_extras()
+    for m in b["mercados"]:
+        ja = {t[0].lower() for t in b["termos"].get(m, [])}
+        b["termos"].setdefault(m, [])
+        b["termos"][m] = b["termos"][m] + [[t, "", "extra"] for t in ext.get(m, []) if t.lower() not in ja]
+    return b
+
+
+def _limpar_termo(t):
+    return re.sub(r"\s+", " ", (t or "").strip().strip('"').strip("“”"))[:80]
+
+
+def adicionar_extras(mercado, termos):
+    if mercado not in banco()["mercados"]: raise SystemExit(f"mercado {mercado} nao existe")
+    d = termos_extras(); lst = d.setdefault(mercado, [])
+    novos = [x for x in dict.fromkeys(_limpar_termo(t) for t in termos) if x and x.lower() not in {y.lower() for y in lst}]
+    lst += novos
+    config.escrever_json(EXTRAS, d)
+    return novos
+
+
+def remover_extra(mercado, termo):
+    d = termos_extras()
+    d[mercado] = [t for t in d.get(mercado, []) if t != termo]
+    config.escrever_json(EXTRAS, d)
 
 
 def tem_token():
@@ -110,11 +148,16 @@ def salvar_meta(rid, **kw):
     return m
 
 
-def nova_rodada(mercados, max_por_termo=1000, finalistas=40):
+def nova_rodada(mercados, max_por_termo=1000, finalistas=40, termos=None):
+    """`termos` = {mercado: [termo, ...]} escolhidos no painel; sem ele, usa o banco inteiro dos mercados."""
     rid = datetime.datetime.now().strftime("%Y-%m-%d_%H%M%S")
     os.makedirs(os.path.join(_pasta(rid), "dados"), exist_ok=True)
+    if termos:
+        termos = {m: [x for x in dict.fromkeys(_limpar_termo(t) for t in lst) if x] for m, lst in termos.items() if lst}
+        mercados = [m for m in mercados if termos.get(m)]
     return salvar_meta(rid, id=rid, criada=datetime.datetime.now().isoformat(timespec="seconds"), mercados=list(mercados),
-                       max_por_termo=int(max_por_termo), finalistas=int(finalistas), fase="coleta", status="rodando")
+                       max_por_termo=int(max_por_termo), finalistas=int(finalistas), fase="coleta", status="rodando",
+                       termos=termos or None)
 
 
 def rodadas():
@@ -123,7 +166,45 @@ def rodadas():
         m = config.ler_json(p, {}) or {}
         ofs = config.ler_json(os.path.join(os.path.dirname(p), "ofertas.json"), []) or []
         m["ofertas"] = len(ofs)
+        m["n_termos"] = sum(len(v) for v in (m.get("termos") or {}).values()) or None
+        m.pop("termos", None)
         out.append(m)
+    return out
+
+
+def nome_rodada(m):
+    c = (m.get("criada") or "")[:10]
+    return m.get("nome") or (f"Mineração {c[8:10]}/{c[5:7]}" if c else "Mineração")
+
+
+def excluir_rodada(rid):
+    """Hard delete da pasta da rodada (anuncios, medicoes, ofertas). As decisoes do operador ficam."""
+    import shutil
+    pasta = os.path.realpath(_pasta(rid))
+    if not rid or os.path.dirname(pasta) != os.path.realpath(RODADAS) or not os.path.isdir(pasta):
+        raise SystemExit("rodada nao existe")
+    if MINERADOR.rodando and MINERADOR.rodada == rid: raise SystemExit("essa rodada esta' rodando: pare antes de excluir")
+    shutil.rmtree(pasta)
+
+
+def ofertas_todas():
+    """Todas as rodadas numa lista so': a mesma oferta (dominio) aparece uma vez, com o dado mais novo
+    e sem perder o que so' a rodada antiga tinha (ex.: nicho e concorrentes da planilha do socio)."""
+    juntas = {}
+    for m in sorted(rodadas(), key=lambda r: r.get("criada") or ""):
+        nome = nome_rodada(m)
+        for o in config.ler_json(os.path.join(_pasta(m["id"]), "ofertas.json"), []) or []:
+            velha = juntas.get(o["chave"])
+            if velha:
+                o = {**velha, **{k: v for k, v in o.items() if v not in (None, "", [], {})}}
+                o["fontes"] = list(dict.fromkeys((velha.get("fontes") or []) + [nome]))
+                if velha.get("nota_planilha") is not None: o["nota_planilha"] = velha["nota_planilha"]
+            else:
+                o["fontes"] = [nome]
+            juntas[o["chave"]] = o
+    dec = decisoes()
+    out = sorted(juntas.values(), key=lambda o: (-o["nota"], -o.get("alcance_ue", 0)))
+    for o in out: o["decisao"] = dec.get(o["chave"]) or {}
     return out
 
 
@@ -147,7 +228,8 @@ def decidir(chave, **kw):
 def ofertas(rid):
     ofs = config.ler_json(os.path.join(_pasta(rid), "ofertas.json"), []) or []
     dec = decisoes()
-    for o in ofs: o["decisao"] = dec.get(o["chave"]) or {}
+    nome = nome_rodada(meta(rid))
+    for o in ofs: o["decisao"] = dec.get(o["chave"]) or {}; o.setdefault("fontes", [nome])
     return ofs
 
 
@@ -220,7 +302,9 @@ def _arq_termo(rid, mercado, termo):
 
 
 def coletar(rid, log=print, parar=None, prog=None):
-    m, b = meta(rid), banco()
+    m, b = meta(rid), banco_completo()
+    if m.get("termos"):                                   # ⭐ termos escolhidos no painel para esta rodada
+        b["termos"] = {mc: [[t, "", ""] for t in lst] for mc, lst in m["termos"].items()}
     mercados = [x for x in m.get("mercados", []) if x in b["termos"]]
     total = sum(len(b["termos"][x]) for x in mercados)
     feitos = [0]
@@ -485,6 +569,82 @@ def montar_ofertas(rid, cands, pags, lps, hoje=None):
     return out
 
 
+# ── importar a planilha de garimpo do time (Planilha de Ofertas.html / dados-*.js) ──
+def ler_planilha(texto):
+    """dados-frances.js / dados-brasil.js (window.OFERTAS["fr"] = [...]) ou um JSON com a lista."""
+    texto = texto.strip()
+    if texto.startswith("["): return json.loads(texto)
+    m = re.search(r"=\s*(\[[\s\S]*\])\s*;?\s*$", texto)
+    if not m: raise SystemExit("nao achei a lista de ofertas no arquivo (esperava window.OFERTAS[...] = [...])")
+    return json.loads(m.group(1))
+
+
+def _host(url):
+    h = re.sub(r"^https?://", "", (url or "").strip().lower()).split("/")[0]
+    return re.sub(r"^www\.", "", h)
+
+
+def importar_planilha(itens, nome="Garimpo do sócio", criada=None, log=print, parar=None):
+    """Vira uma rodada: cada oferta da planilha e' medida pela API (alcance real, paises, 15+ dias) e a landing
+    e' lida. Nota, nicho, concorrentes, variacoes e observacoes da planilha ficam como estao."""
+    criada = criada or datetime.datetime.now().isoformat(timespec="seconds")
+    rid = criada[:10] + "_planilha-" + config.slug(nome, 24)
+    os.makedirs(_pasta(rid), exist_ok=True)
+    salvar_meta(rid, id=rid, criada=criada, nome=nome, tipo="planilha", mercados=["FR"], fase="medicao", status="rodando")
+    try:
+        return _importar_planilha(rid, itens, nome, log, parar)
+    except BaseException as e:                                       # noqa: BLE001
+        salvar_meta(rid, status="erro", erro=str(e)[:300]); raise
+
+
+def _importar_planilha(rid, itens, nome, log, parar):
+    arq_p = os.path.join(_pasta(rid), "paginas.json")
+    pags = config.ler_json(arq_p, {}) or {}
+    hoje, out = datetime.date.today(), []
+    for it in itens:
+        pid = (re.search(r"view_all_page_id=(\d+)", it.get("biblioteca") or "") or [None, None])[1]
+        chave = _host(it.get("landing")) or (f"pagina:{pid}" if pid else config.slug(it.get("oferta", "?"), 40))
+        p = pags.get(chave)
+        if p is None and pid and tem_token():
+            try:
+                p = pags[chave] = medir_pagina([pid], parar); config.escrever_json(arq_p, pags)
+                log(f"medida: {it.get('oferta')} · {p['alcance_ue']:,} pessoas".replace(",", "."))
+            except RuntimeError as e:
+                log(f"⚠ medicao de {it.get('oferta')}: {e}"); p = None
+        p = p or {"anuncios": it.get("ativos_total") or 0, "anuncios_15d": it.get("ativos_15d") or 0, "alcance_ue": 0,
+                  "alcance_15d": 0, "max_dias": 0, "paises_pct": {}, "idiomas": {}}
+        lp = ler_landing(it["landing"]) if it.get("landing") else {}
+        pres = presenca(p)
+        dias_planilha = (hoje - datetime.date.fromisoformat(it["rodando_desde"])).days if it.get("rodando_desde") else 0
+        max_dias = max(p.get("max_dias") or 0, dias_planilha)
+        bandeiras = (["novo"] if p["anuncios_15d"] == 0 else []) + (["operador_br"] if lp.get("brl") else [])
+        obs = " ".join(x for x in (it.get("por_que"), it.get("observacao")) if x)
+        o = {"chave": chave, "oferta": it.get("oferta") or chave, "titulo_landing": lp.get("titulo") or "",
+             "anunciante": it.get("anunciante") or "", "biblioteca": it.get("biblioteca") or (biblioteca(pid) if pid else ""),
+             "bibliotecas": [{"nome": it.get("anunciante") or "página", "url": it.get("biblioteca")}] if it.get("biblioteca") else [],
+             "landing": it.get("landing"), "landing_erro": lp.get("erro"), "origem": ["FR"],
+             "variacoes": [{"termo": x["termo"], "mercado": "FR"} for x in it.get("pesquisar") or [] if x.get("termo")],
+             "alcance_ue": p["alcance_ue"], "alcance_15d": p.get("alcance_15d", 0), "anuncios": p["anuncios"],
+             "anuncios_15d": p["anuncios_15d"], "max_dias": max_dias,
+             "rodando_desde": it.get("rodando_desde") or (hoje - datetime.timedelta(days=max_dias)).isoformat(),
+             "paises_pct": p.get("paises_pct", {}), "idiomas": p.get("idiomas", {}), "presenca": pres,
+             "buraco": [m for m, v in pres.items() if v < 5] if p.get("paises_pct") else [],
+             "precos": [it["preco"]] if it.get("preco") else lp.get("precos") or [], "preco_min": lp.get("preco_min"),
+             "digital": 1.0, "bandeiras": bandeiras, "textos": [], "titulos": [],
+             "nicho": it.get("nicho") or "", "formato": it.get("formato") or "", "observacao": obs,
+             "concorrentes": [{"nome": c.get("nome"), "url": c.get("link"), "obs": c.get("obs")} for c in it.get("concorrentes") or []],
+             "n_concorrentes": it.get("concorrentes_fr"), "anuncios_fr": it.get("anuncios_fr"), "anuncios_fr_15d": it.get("anuncios_fr_15d"),
+             "esforco": it.get("esforco"), "aceitacao": it.get("aceitacao_fr"), "adaptacao": it.get("adaptacao"),
+             "paises_alvo": it.get("paises_alvo"), "nota_planilha": it.get("nota")}
+        o["nota"] = float(it["nota"]) if it.get("nota") is not None else nota(o)
+        out.append(o)
+    out.sort(key=lambda o: (-o["nota"], -o["alcance_ue"]))
+    config.escrever_json(os.path.join(_pasta(rid), "ofertas.json"), out)
+    salvar_meta(rid, fase="pronta", status="pronta")
+    log(f"planilha importada: {len(out)} ofertas em '{nome}'")
+    return rid, out
+
+
 # ── a rodada inteira ──────────────────────────────────────────────────────────
 def analisar(rid, log=print, parar=None, fase=None, prog=None):
     """Etapas 2-5 (sem coletar). Retoma: pagina ja' medida e landing ja' lida nao repetem."""
@@ -553,6 +713,19 @@ class Minerador:
                 salvar_meta(rid, status="parada"); self.log("mineracao parada: retome quando quiser")
             except BaseException as e:                               # noqa: BLE001 (SystemExit inclusive)
                 salvar_meta(rid, status="erro", erro=str(e)[:300]); self.log(f"⚠ mineracao parou: {e}")
+        self.thread = threading.Thread(target=correr, daemon=True); self.thread.start()
+
+    def importar(self, itens, nome):
+        """Planilha → rodada, em segundo plano (mede cada pagina na API)."""
+        if self.rodando: raise RuntimeError("ja' existe uma mineracao rodando")
+        self.parar.clear(); self.rodada = None; self.fase = "medicao"; self.progresso = {"feitos": 0, "total": len(itens)}
+
+        def correr():
+            try:
+                rid, _ = importar_planilha(itens, nome, log=self.log, parar=self.parar)
+                self.rodada = rid; self.fase = "pronta"
+            except BaseException as e:                               # noqa: BLE001
+                self.log(f"⚠ importacao parou: {e}")
         self.thread = threading.Thread(target=correr, daemon=True); self.thread.start()
 
 

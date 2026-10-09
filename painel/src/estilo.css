@@ -406,3 +406,55 @@ select.campo { appearance: auto; }
 .vazio-tabela { padding: 24px; text-align: center; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
 @media (max-width: 1100px) { .oferta-detalhe { grid-template-columns: 1fr; } }
+
+/* mineracao: colunas que vieram da planilha do time */
+.c-nicho { min-width: 150px; max-width: 200px; color: var(--ow-text-2); }
+.c-origem { min-width: 120px; }
+.c-origem .fonte { display: block; font: 600 12px/1.35 var(--ow-font-body); color: var(--ow-text-2); }
+.c-origem .meta { display: block; margin-top: 3px; }
+.c-conc { min-width: 140px; }
+.c-conc strong { display: block; font: 700 14px/1.2 var(--ow-font-display); margin-bottom: 4px; }
+.c-conc strong.nenhum { color: var(--ow-green); font: 600 12.5px/1.2 var(--ow-font-body); }
+.c-obs { min-width: 180px; max-width: 240px; }
+.obs-curta { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; color: var(--ow-text-2); }
+.nota-socio { display: block; margin-top: 4px; font-size: 10.5px; white-space: nowrap; }
+.btn-icon-lg { width: 44px; padding: 0; }
+.btn-danger { background: var(--ow-danger); color: #2A0A05; border: 0; font-weight: 700; }
+.btn-danger:hover:not(:disabled) { filter: brightness(1.08); }
+
+/* janela de confirmacao */
+.modal-fundo { position: fixed; inset: 0; z-index: 40; display: grid; place-items: center; padding: 24px;
+  background: rgba(3, 8, 7, .72); backdrop-filter: blur(3px); animation: subir 160ms var(--ow-ease); }
+.modal { width: min(560px, 100%); max-height: calc(100vh - 48px); overflow: auto; display: grid; gap: 0; }
+.modal-topo { display: flex; align-items: center; gap: 12px; padding: 18px 18px 6px 22px; }
+.modal-topo h2 { font-size: 21px; flex: 1; }
+.modal-corpo { padding: 8px 22px 6px; display: grid; gap: 12px; }
+.modal-corpo p { margin: 0; color: var(--ow-text-2); font-size: var(--ow-fs-small); }
+.modal-corpo p strong { color: var(--ow-text); }
+.modal-acoes { display: flex; justify-content: flex-end; gap: 8px; padding: 18px 22px 20px; }
+.modal-perigo { border-color: rgba(238, 122, 102, .45); }
+.ico-perigo { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; flex: none;
+  background: var(--ow-danger-soft); color: var(--ow-danger); }
+
+/* nova mineracao: escolher os termos */
+.camadas { display: grid; gap: 14px; max-height: 460px; overflow-y: auto; padding: 4px 6px 4px 0; }
+.camada { display: grid; gap: 8px; }
+.camada-topo { display: flex; align-items: center; gap: 8px; }
+.camada-topo strong { font: 650 14px/1.2 var(--ow-font-display); }
+.camada-topo .btn-sm { min-height: 26px; padding: 0 8px; font-size: 12px; }
+.termos { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-termo { display: inline-flex; align-items: stretch; border-radius: var(--ow-radius-pill); border: 1px solid var(--ow-line-strong);
+  background: var(--ow-bg-deep); overflow: hidden; transition: border-color var(--ow-fast), background var(--ow-fast); }
+.chip-termo button { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 12px; border: 0; background: none;
+  color: var(--ow-text-3); font: 500 13px/1.2 var(--ow-font-body); cursor: pointer; text-align: left; }
+.chip-termo .t { color: var(--ow-text-2); }
+.chip-termo .pt { font: 400 11px/1.2 var(--ow-font-mono); color: var(--ow-text-off); }
+.chip-termo.on { border-color: rgba(169, 196, 106, .55); background: var(--ow-green-soft); }
+.chip-termo.on button { color: var(--ow-green); }
+.chip-termo.on .t { color: var(--ow-text); }
+.chip-termo.on .pt { color: var(--ow-text-3); }
+.chip-termo button:hover .t { text-decoration: underline; }
+.chip-termo .x { padding: 0 9px 0 4px; color: var(--ow-text-3); }
+.chip-termo .x:hover { color: var(--ow-danger); }
+textarea.campo.termos-novos { min-height: 84px; }
+.nova-mineracao .seg button { min-height: 32px; padding: 0 12px; }
