@@ -40,6 +40,10 @@ Dê dois cliques em `EditingTool.cmd` (ou rode `python edt.py painel`). A janela
 
 Pela interface também dá para criar campanhas e ajustar voz, modelo, transições, música e SFX.
 
+A aba **Mineração** garimpa ofertas de infoproduto escaladas na Europa pela API oficial da Biblioteca de Anúncios da Meta
+(precisa do `META_TOKEN` no `.env`). A tabela traz a nota, o link da biblioteca, a landing, o alcance real na UE, os anúncios
+com 15+ dias, os países e o "buraco" (francês ou alemão) de cada oferta. Pelo terminal: `python edt.py minerar`.
+
 ## Uso rápido
 
 ```bash

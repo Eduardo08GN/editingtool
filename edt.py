@@ -11,6 +11,8 @@
     python edt.py musica <campanha>                                     (qual faixa cada criativo usaria)
     python edt.py painel [--porta 8791] [--sem-janela]                 (abre a interface)
     python edt.py publicar <campanha> [--repo URL --pasta "dentro/do/repo"]  (manda os entregues ao GitHub)
+    python edt.py minerar [--mercados FR,DE,PT] [--max 1000] [--finalistas 40]  (garimpa ofertas na Biblioteca da Meta)
+    python edt.py minerar --rodada <id>                                 (retoma uma rodada / refaz a analise)
 """
 import argparse, os, sys
 
@@ -48,7 +50,24 @@ def main(argv):
     p = sub.add_parser("remotion"); p.add_argument("campanha"); p.add_argument("--id", required=True); p.add_argument("--motion", action="store_true")
     p = sub.add_parser("publicar"); p.add_argument("campanha"); p.add_argument("--repo"); p.add_argument("--pasta")
     p = sub.add_parser("painel"); p.add_argument("--porta", type=int, default=8791); p.add_argument("--sem-janela", action="store_true")
+    p = sub.add_parser("minerar"); p.add_argument("--mercados", default="FR,DE,PT"); p.add_argument("--max", type=int, default=1000)
+    p.add_argument("--finalistas", type=int, default=40); p.add_argument("--rodada", help="retoma esta rodada em vez de abrir outra")
     a = ap.parse_args(argv)
+
+    if a.cmd == "minerar":
+        from editor import mineracao
+        if a.rodada:
+            rid = a.rodada
+            if not mineracao.meta(rid): raise SystemExit(f"rodada {rid} nao existe")
+            ofs = (mineracao.rodar if mineracao.tem_token() else mineracao.analisar)(rid)
+        else:
+            rid = mineracao.nova_rodada([m.strip().upper() for m in a.mercados.split(",") if m.strip()], a.max, a.finalistas)["id"]
+            ofs = mineracao.rodar(rid)
+        mineracao.salvar_meta(rid, status="pronta", fase="pronta")
+        for i, o in enumerate(ofs[:20], 1):
+            print(f"{i:>2}. {o['nota']:>4}  {o['oferta'][:48]:<48} {o['alcance_ue']:>10,} pessoas  buraco: {'/'.join(o['buraco']) or '-'}")
+            print(f"      {o['biblioteca']}")
+        return 0
 
     if a.cmd == "remotion":
         from editor import motor_remotion

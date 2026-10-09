@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 
-// rotas por hash: #/ · #/criativos · #/nova · #/ajustes · #/c/1.5
-export type Rota = { tela: "painel" | "criativos" | "nova" | "ajustes"; criativo?: string };
+// rotas por hash: #/ · #/criativos · #/nova · #/ajustes · #/mineracao · #/c/1.5
+export type Rota = { tela: "painel" | "criativos" | "nova" | "ajustes" | "mineracao"; criativo?: string };
 
 function ler(): Rota {
   const h = location.hash.replace(/^#\/?/, "");
@@ -9,6 +9,7 @@ function ler(): Rota {
   if (h.startsWith("criativos")) return { tela: "criativos" };
   if (h.startsWith("nova")) return { tela: "nova" };
   if (h.startsWith("ajustes")) return { tela: "ajustes" };
+  if (h.startsWith("mineracao")) return { tela: "mineracao" };
   return { tela: "painel" };
 }
 
@@ -23,6 +24,6 @@ export function useRota(): Rota {
 }
 
 export const link = {
-  painel: "#/", criativos: "#/criativos", nova: "#/nova", ajustes: "#/ajustes",
+  painel: "#/", criativos: "#/criativos", nova: "#/nova", ajustes: "#/ajustes", mineracao: "#/mineracao",
   criativo: (id: string) => `#/c/${encodeURIComponent(id)}`,
 };

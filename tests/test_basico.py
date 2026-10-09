@@ -104,6 +104,41 @@ def test_cta_aceita_clica():
     assert sfx.indice_cta(pal) == 1 and sfx.indice_cta(pal, "clique") == 1
     assert sfx.indice_cta([("clicar", 0, 1)]) is None
 
+# ── mineracao (sem rede) ──────────────────────────────────────────────────────
+def _ad(i, pid, dom, dias, alcance, corpo, termo="à imprimer", mercado="FR"):
+    import datetime
+    ini = (datetime.date(2026, 10, 9) - datetime.timedelta(days=dias)).isoformat()
+    return {"id": str(i), "page_id": pid, "page_name": f"pag {pid}", "ad_delivery_start_time": ini, "eu_total_reach": alcance,
+            "ad_creative_bodies": [corpo], "ad_creative_link_titles": ["Kit"], "ad_creative_link_captions": [dom],
+            "languages": ["fr"], "_termo": termo, "_mercado": mercado}
+
+
+def test_mineracao_agrupa_por_landing_e_filtra():
+    import datetime
+    from editor import mineracao
+    hoje = datetime.date(2026, 10, 9)
+    ads = [_ad(i, "1", "kit.com", 20 if i < 3 else 3, 1000, "PDF à imprimer, accès immédiat") for i in range(5)]
+    ads += [_ad(10 + i, "2", "www.Creme.fr", 30, 9000, "Crème anti-âge, livraison offerte") for i in range(4)]
+    ads += [_ad(20 + i, "3", "maigrir.fr", 30, 9000, "PDF pour maigrir de 10 kilos") for i in range(4)]
+    g = mineracao.agrupar(ads, hoje)
+    assert set(g) == {"kit.com", "creme.fr", "maigrir.fr"}           # dominio normalizado (sem www, minusculo)
+    assert g["kit.com"]["n15"] == 3 and g["kit.com"]["alc"] == 5000 and g["kit.com"]["alc_novo"] == 2000
+    cands = mineracao.candidatos(g)
+    assert [c["chave"] for c in cands] == ["kit.com"]                 # fisico e proibido saem
+
+
+def test_mineracao_buraco_e_nota():
+    from editor import mineracao
+    pag = {"paises_pct": {"ES": 87, "PT": 4, "FR": 1}, "idiomas": {"es": 100}}
+    pres = mineracao.presenca(pag)
+    assert pres == {"FR": 1, "DE": 0}
+    base = {"alcance_ue": 500_000, "anuncios_15d": 40, "presenca": pres, "buraco": ["FR", "DE"], "digital": 1.0, "bandeiras": []}
+    alta = mineracao.nota(base)
+    assert alta >= 8
+    assert mineracao.nota({**base, "bandeiras": ["isca"]}) <= alta - 4     # isca gratis derruba
+    assert mineracao.nota({**base, "buraco": [], "presenca": {"FR": 60, "DE": 40}}) < alta
+
+
 if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)

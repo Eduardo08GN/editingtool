@@ -63,3 +63,32 @@ export const midia = (caminho: string) => `/api/midia?caminho=${encodeURICompone
 export const miniatura = (caminho: string, w = 360, t?: number) =>
   `/api/miniatura?caminho=${encodeURIComponent(caminho)}&w=${w}${t !== undefined ? `&t=${t}` : ""}&k=${encodeURIComponent(senha())}`;
 export const temSenha = () => !!senha();
+
+// ── Mineracao de ofertas (editor/mineracao.py) ──────────────────────────────
+export type FaseMineracao = "coleta" | "grupos" | "medicao" | "landing" | "ofertas" | "pronta";
+
+export interface RodadaMineracao {
+  id: string; criada: string; mercados: string[]; max_por_termo: number; finalistas: number;
+  fase: FaseMineracao; status: "rodando" | "pronta" | "parada" | "erro"; erro?: string | null; ofertas?: number; nota?: string;
+}
+
+export interface EstadoMineracao {
+  token: boolean; rodando: boolean; rodada: string | null; fase: FaseMineracao | null; parando: boolean;
+  progresso: { feitos: number; total: number }; registro: Linha[]; rodadas: RodadaMineracao[];
+  mercados: Record<string, { nome: string; paises: string[]; idioma: string; termos: number }>;
+}
+
+export interface Decisao { status?: "aprovada" | "descartada"; nota?: number; obs?: string; nicho?: string; quando?: string }
+
+export interface Oferta {
+  chave: string; oferta: string; titulo_landing: string; anunciante: string;
+  biblioteca: string; bibliotecas: { nome: string; url: string }[]; landing: string | null; landing_erro?: string | null;
+  origem: string[]; variacoes: { termo: string; mercado: string }[];
+  alcance_ue: number; alcance_15d: number; anuncios: number; anuncios_15d: number; max_dias: number; rodando_desde: string;
+  paises_pct: Record<string, number>; idiomas: Record<string, number>; presenca: Record<string, number>; buraco: string[];
+  precos: string[]; preco_min: number | null; digital: number; bandeiras: string[]; textos: string[]; titulos: string[];
+  nota: number; decisao: Decisao;
+}
+
+// ⭐ biblioteca/landing abrem no navegador PADRAO do operador (logado), nao na janela da ferramenta
+export const abrirLink = (url: string) => enviar("/api/abrir-link", { url });

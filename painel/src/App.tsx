@@ -7,6 +7,7 @@ import { Painel } from "./telas/Painel";
 import { Criativos } from "./telas/Criativos";
 import { NovaCampanha } from "./telas/NovaCampanha";
 import { Ajustes } from "./telas/Ajustes";
+import { Mineracao } from "./telas/Mineracao";
 
 export interface Ctx {
   estado: Estado;
@@ -61,6 +62,7 @@ export function App() {
         {rota.tela === "criativos" && <Criativos ctx={ctx} aberto={rota.criativo} />}
         {rota.tela === "nova" && <NovaCampanha ctx={ctx} />}
         {rota.tela === "ajustes" && <Ajustes ctx={ctx} />}
+        {rota.tela === "mineracao" && <Mineracao ctx={ctx} />}
       </main>
       <Toast aviso={aviso} fechar={() => setAviso(null)} />
     </div>

@@ -329,3 +329,80 @@ select.campo { appearance: auto; }
 .qa-entrega ul { margin: 0; padding-left: 18px; color: var(--ow-text-2); font-size: var(--ow-fs-small); }
 .qa-entrega li.falha { color: var(--ow-sun); font-weight: 600; }
 .qa-entrega .folha { width: 100%; height: auto; border-radius: calc(var(--ow-radius) - 2px); display: block; }
+
+/* ══ MINERACAO: tabela de ofertas no formato da planilha do time ═════════════════════════════ */
+.tela-larga { max-width: 1680px; }
+.campo-rodada { width: auto; min-height: 44px; max-width: 340px; font: 400 12.5px/1.2 var(--ow-font-mono); }
+.fases { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 8px; }
+.fases li { display: inline-flex; align-items: center; gap: 8px; height: 32px; padding: 0 12px 0 6px; border-radius: var(--ow-radius-pill);
+  border: 1px solid var(--ow-line); color: var(--ow-text-3); font: 500 13px/1 var(--ow-font-body); }
+.fases .bola { width: 22px; height: 22px; border-radius: 50%; display: grid; place-items: center; font: 500 11px/1 var(--ow-font-mono);
+  background: rgba(255, 255, 255, .05); color: var(--ow-text-3); }
+.fases .bola .spin { width: 12px; height: 12px; border-width: 2px; }
+.fases li.agora { color: var(--ow-text); border-color: rgba(95, 214, 206, .45); }
+.fases li.agora .bola { color: var(--ow-accent); background: var(--ow-accent-soft); }
+.fases li.feito { color: var(--ow-text-2); }
+.fases li.feito .bola { background: var(--ow-green); color: var(--ow-green-ink); }
+
+.tabela-topo { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.seg-n { font: 400 11px/1 var(--ow-font-mono); opacity: .75; margin-left: 4px; }
+.busca { position: relative; display: flex; align-items: center; min-width: 280px; flex: 0 1 380px; }
+.busca svg { position: absolute; left: 12px; color: var(--ow-text-3); pointer-events: none; }
+.busca .campo { padding-left: 36px; }
+
+.tabela-wrap { overflow-x: auto; }
+.tabela-ofertas { width: 100%; border-collapse: collapse; min-width: 1500px; font-size: var(--ow-fs-small); }
+.tabela-ofertas thead th { position: sticky; top: 0; z-index: 1; background: var(--ow-surface-2); text-align: left; padding: 12px 10px;
+  font: 500 10.5px/1.3 var(--ow-font-mono); letter-spacing: .12em; text-transform: uppercase; color: var(--ow-text-3); white-space: nowrap;
+  border-bottom: 1px solid var(--ow-line-strong); }
+.th-ord { background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit; cursor: pointer; }
+.th-ord:hover, .th-ord[aria-pressed="true"] { color: var(--ow-sun); }
+.tabela-ofertas tbody tr { cursor: pointer; transition: background var(--ow-fast); }
+.tabela-ofertas tbody tr:hover { background: rgba(255, 255, 255, .025); }
+.tabela-ofertas td { padding: 12px 10px; border-top: 1px solid var(--ow-line); vertical-align: top; }
+.tabela-ofertas tr.top td { background: linear-gradient(90deg, rgba(244, 185, 66, .07), transparent 70%); }
+.tabela-ofertas tr.top td:first-child { box-shadow: inset 3px 0 0 var(--ow-sun); }
+.tabela-ofertas tr.aprovada td:first-child { box-shadow: inset 3px 0 0 var(--ow-green); }
+.tabela-ofertas tr.descartada { opacity: .55; }
+.pos { display: inline-grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; font: 600 12px/1 var(--ow-font-mono);
+  background: rgba(255, 255, 255, .05); color: var(--ow-text-2); }
+.pos.ouro { background: var(--ow-sunset); color: var(--ow-sun-ink); }
+.nota { display: inline-grid; place-items: center; min-width: 46px; height: 28px; padding: 0 8px; border-radius: var(--ow-radius-pill);
+  font: 700 14px/1 var(--ow-font-display); font-variant-numeric: tabular-nums; }
+.nota.alta { background: var(--ow-green); color: var(--ow-green-ink); }
+.nota.media { background: var(--ow-sun-soft); color: var(--ow-sun); }
+.nota.baixa { background: rgba(255, 255, 255, .05); color: var(--ow-text-3); }
+.c-oferta { min-width: 240px; max-width: 320px; }
+.c-oferta strong { display: block; font: 650 14px/1.35 var(--ow-font-display); color: var(--ow-text); letter-spacing: -.005em; }
+.c-oferta .meta { display: block; margin-top: 3px; }
+.c-oferta .chips { margin-top: 8px; }
+.top3 { display: inline-block; margin-top: 4px; font: 600 11px/1 var(--ow-font-mono); color: var(--ow-sun); }
+.tag-mini { height: 21px; padding: 0 8px; font-size: 10px; letter-spacing: .06em; }
+.btn-abrir { background: var(--ow-green); color: var(--ow-green-ink); border-color: transparent; font-weight: 700; }
+.btn-abrir:hover { filter: brightness(1.08); }
+.c-num strong { display: block; font: 700 15px/1.2 var(--ow-font-display); font-variant-numeric: tabular-nums; }
+.c-num { white-space: nowrap; }
+.paises { display: grid; gap: 2px; white-space: nowrap; color: var(--ow-text-2); }
+.paises b { font: 500 11.5px/1 var(--ow-font-mono); color: var(--ow-text-3); margin-left: 4px; }
+.buraco { display: inline-block; padding: 4px 9px; border-radius: var(--ow-radius-pill); background: var(--ow-green-soft); color: var(--ow-green);
+  font: 600 12px/1.2 var(--ow-font-body); white-space: nowrap; }
+.c-preco { max-width: 150px; }
+.c-var { min-width: 200px; }
+.variacoes { display: grid; gap: 4px; max-height: 92px; overflow-y: auto; padding-right: 4px; justify-items: start; }
+.variacoes .btn { min-height: 0; padding: 2px 0; border: 0; font: 400 12px/1.35 var(--ow-font-body); color: var(--ow-accent); white-space: normal; text-align: left; gap: 4px; }
+.variacoes .btn:hover { background: none; text-decoration: underline; }
+.variacoes .btn svg { flex: none; opacity: .6; }
+.c-acoes { white-space: nowrap; }
+.btn.on-ok { background: var(--ow-green); color: var(--ow-green-ink); }
+.btn.on-no { background: var(--ow-danger-soft); color: var(--ow-danger); }
+.virado { transform: rotate(180deg); transition: transform var(--ow-fast); }
+.detalhe-linha td { background: var(--ow-bg-deep); cursor: default; }
+.tabela-ofertas tbody tr.detalhe-linha:hover { background: none; }
+/* ⭐ fixo na area visivel: com a tabela rolada para o lado, o detalhe nao some pela esquerda */
+.oferta-detalhe { display: grid; grid-template-columns: 1.1fr 1fr; gap: 24px; padding: 6px 6px 10px;
+  position: sticky; left: 10px; width: min(1400px, calc(100vw - var(--lateral) - 110px)); }
+.od-copy p { margin: 8px 0 0; color: var(--ow-text-2); font-size: var(--ow-fs-small); max-width: 70ch; }
+.od-dados { display: grid; gap: 14px; align-content: start; }
+.vazio-tabela { padding: 24px; text-align: center; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+@media (max-width: 1100px) { .oferta-detalhe { grid-template-columns: 1fr; } }

@@ -12,17 +12,22 @@ Leitura                                     Acoes (POST)
   GET /api/midia?caminho=&t=                  /api/produzir  {campanha, ids?, refazer?}
   GET /api/miniatura?caminho=&w=&t=           /api/parar
                                               /api/abrir-pasta {caminho}
+Mineracao de ofertas (editor/mineracao.py)    /api/abrir-link {url}   (abre no navegador padrao)
+  GET /api/mineracao                          /api/mineracao/iniciar  {mercados, max_por_termo, finalistas}
+  GET /api/mineracao/rodadas/{id}             /api/mineracao/retomar  {rodada}
+  GET /api/mineracao/termos                   /api/mineracao/parar
+                                              /api/mineracao/decidir  {chave, status?, nota?, obs?, nicho?}
 ⛔ `?k=` (senha) tambem vale na URL: <video src> nao manda cabecalho. (`t` e' o tempo do quadro.)
 ⛔ Midia so' de dentro de campanhas/, musica/ e sfx/ — o servidor nao serve o disco inteiro.
 """
-import hashlib, io, json, os, secrets, socket, threading, time
+import hashlib, io, json, os, re, secrets, socket, threading, time
 from datetime import datetime
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, JSONResponse
 from pydantic import BaseModel
 
-from . import campanha as _camp, config, lote, montagem, musica, transicoes
+from . import campanha as _camp, config, lote, mineracao, montagem, musica, transicoes
 
 PAINEL = os.path.join(config.RAIZ, "painel", "dist")
 CACHE_MINI = os.path.join(config.CACHE_DIR, "miniaturas")
@@ -241,6 +246,28 @@ class Caminho(BaseModel):
     caminho: str
 
 
+class Minerar(BaseModel):
+    mercados: list = ["FR", "DE", "PT"]
+    max_por_termo: int = 1000
+    finalistas: int = 40
+
+
+class Rodada(BaseModel):
+    rodada: str
+
+
+class Decidir(BaseModel):
+    chave: str
+    status: str | None = None          # "aprovada" | "descartada" | "" (limpa)
+    nota: float | None = None
+    obs: str | None = None
+    nicho: str | None = None
+
+
+class Link(BaseModel):
+    url: str
+
+
 def criar_app(token, hosts):
     app = FastAPI(title="editingtool", docs_url=None, redoc_url=None, openapi_url=None)
 
@@ -361,6 +388,61 @@ def criar_app(token, hosts):
         if not dentro(os.path.join(alvo, "x")) and not os.path.isdir(alvo): raise HTTPException(404, "pasta nao existe")
         if os.name == "nt": os.startfile(alvo)                   # noqa: S606 (abre o Explorer na pasta)
         return {"ok": True}
+
+    # ── mineracao de ofertas ──────────────────────────────────────────────────
+    @app.get("/api/mineracao")
+    def get_mineracao():
+        M = mineracao.MINERADOR
+        b = mineracao.banco()
+        return {"token": mineracao.tem_token(), "rodando": M.rodando, "rodada": M.rodada if M.rodando else None,
+                "fase": M.fase if M.rodando else None, "progresso": M.progresso, "parando": M.parar.is_set(),
+                "registro": M.registro[:40], "rodadas": mineracao.rodadas(),
+                "mercados": {k: {**v, "termos": len(b["termos"].get(k, []))} for k, v in b["mercados"].items()}}
+
+    @app.get("/api/mineracao/rodadas/{rid}")
+    def get_rodada(rid: str):
+        m = mineracao.meta(rid)
+        if not m: raise HTTPException(404, "rodada nao existe")
+        return {"rodada": m, "ofertas": mineracao.ofertas(rid)}
+
+    @app.get("/api/mineracao/termos")
+    def get_termos():
+        return mineracao.banco()
+
+    @app.post("/api/mineracao/iniciar")
+    def post_minerar(b: Minerar):
+        if mineracao.MINERADOR.rodando: raise HTTPException(409, "ja' existe uma mineracao rodando")
+        if not mineracao.tem_token(): raise HTTPException(400, "falta o META_TOKEN no .env (token da Biblioteca de Anuncios)")
+        merc = [m for m in b.mercados if m in mineracao.banco()["mercados"]]
+        if not merc: raise HTTPException(400, "escolha pelo menos um mercado")
+        r = mineracao.nova_rodada(merc, max(100, min(b.max_por_termo, 3000)), max(5, min(b.finalistas, 120)))
+        mineracao.MINERADOR.iniciar(r["id"])
+        mineracao.MINERADOR.log(f"mineracao comecou: {', '.join(merc)}")
+        return {"ok": True, "rodada": r["id"]}
+
+    @app.post("/api/mineracao/retomar")
+    def post_retomar(b: Rodada):
+        if mineracao.MINERADOR.rodando: raise HTTPException(409, "ja' existe uma mineracao rodando")
+        if not mineracao.meta(b.rodada): raise HTTPException(404, "rodada nao existe")
+        mineracao.MINERADOR.iniciar(b.rodada, coletar_antes=mineracao.tem_token())
+        mineracao.MINERADOR.log(f"retomando a rodada {b.rodada}")
+        return {"ok": True}
+
+    @app.post("/api/mineracao/parar")
+    def post_parar_mineracao():
+        mineracao.MINERADOR.parar.set(); mineracao.MINERADOR.log("parada pedida: termina a chamada atual e para")
+        return {"ok": True}
+
+    @app.post("/api/mineracao/decidir")
+    def post_decidir(b: Decidir):
+        return {"ok": True, "decisao": mineracao.decidir(**b.model_dump(exclude_unset=True))}
+
+    @app.post("/api/abrir-link")
+    def abrir_link(b: Link):
+        """Abre biblioteca/landing no navegador PADRAO do operador (onde ele esta' logado), nao na janela da ferramenta."""
+        import webbrowser
+        if not re.match(r"^https?://[^\s]+$", b.url): raise HTTPException(400, "so' links http(s)")
+        webbrowser.open(b.url); return {"ok": True}
 
     @app.get("/api/midia")
     def midia(caminho: str):

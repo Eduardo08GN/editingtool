@@ -1,4 +1,4 @@
-import { Clapperboard, LayoutDashboard, PlusSquare, SlidersHorizontal } from "lucide-react";
+import { Clapperboard, LayoutDashboard, Pickaxe, PlusSquare, SlidersHorizontal } from "lucide-react";
 import { enviar } from "../api";
 import type { Ctx } from "../App";
 import { link, type Rota } from "../rota";
@@ -12,6 +12,7 @@ export function Lateral({ ctx, rota }: { ctx: Ctx; rota: Rota }) {
     { href: link.criativos, tela: "criativos", icone: <Clapperboard size={18} />, texto: "Criativos", count: conferir },
     { href: link.nova, tela: "nova", icone: <PlusSquare size={18} />, texto: "Nova campanha" },
     { href: link.ajustes, tela: "ajustes", icone: <SlidersHorizontal size={18} />, texto: "Ajustes" },
+    { href: link.mineracao, tela: "mineracao", icone: <Pickaxe size={18} />, texto: "Mineração" },
   ];
   return (
     <aside className="side">

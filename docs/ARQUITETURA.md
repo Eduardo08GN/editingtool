@@ -53,6 +53,8 @@ final.mp4 (1080×1920, 30 fps, H.264 CRF 19, AAC 192k)  →  _entregues/  +  pla
 | `editor/render.py` | o grafo do ffmpeg |
 | `editor/lote.py` | orquestra a campanha: paralelo entre públicos, idempotente, QA |
 | `editor/player.py` | página de revisão |
+| `editor/mineracao.py` | aba Mineração: coleta na API da Biblioteca de Anúncios, grupos por landing, medição por alcance real na UE, leitura da landing, nota e buraco FR/DE |
+| `editor/servidor.py` | API local do painel (FastAPI, 127.0.0.1, senha por sessão) |
 
 ## Por que cada decisão
 
