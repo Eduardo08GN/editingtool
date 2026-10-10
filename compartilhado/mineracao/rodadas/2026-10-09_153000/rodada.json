@@ -1,0 +1,15 @@
+{
+ "id": "2026-10-09_153000",
+ "criada": "2026-10-09T15:30:00",
+ "mercados": [
+  "FR",
+  "DE",
+  "PT"
+ ],
+ "max_por_termo": 1000,
+ "finalistas": 40,
+ "fase": "pronta",
+ "status": "pronta",
+ "nota": "importada da garimpagem de 09/10 (Claude Code)",
+ "nome": "Mineração FR/DE/PT 09/10"
+}
