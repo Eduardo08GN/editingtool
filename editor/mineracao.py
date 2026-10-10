@@ -40,41 +40,58 @@ ALVO = {"FR": (("FR", "LU"), "fr"), "DE": (("DE", "AT"), "de")}
 GENERICOS = {"fb.me", "fb.com", "facebook.com", "m.facebook.com", "instagram.com", "wa.me", "api.whatsapp.com",
              "whatsapp.com", "m.me", "bit.ly", "linktr.ee", "youtube.com", "youtu.be", "apps.apple.com",
              "play.google.com", "itunes.apple.com", "tiktok.com", "google.com", "tapthe.link"}
-LOJAS = {"amazon.fr", "amazon.de", "amazon.com", "amzn.to", "amzn.eu", "fnac.com", "thalia.de", "etsy.com"}
+LOJAS = {"amazon.fr", "amazon.de", "amazon.com", "amzn.to", "amzn.eu", "fnac.com", "thalia.de", "etsy.com", "amazon.es", "amazon.it"}
+# marcas e lojas grandes que os termos amplos ("Halloween", "statt", "Eltern") puxam: nao sao infoproduto low ticket
+MARCA = re.compile(r"playstation|xbox|nintendo|steampowered|callofduty|\bea\.com|ubisoft|epicgames|booking\.|airbnb|"
+                   r"lidl|aldi|carrefour|decathlon|ikea|zalando|shein|temu|aliexpress|netflix|disney|spotify|uber", re.I)
+ALCANCE_MARCA = 15_000_000     # acima disso (pessoas na UE), quase sempre e' marca grande, nao oferta low ticket
 
 DIGITAL = re.compile(
     r"\bpdf\b|e-?books?\b|numérique|télécharg|à imprimer|imprimable|accès immédiat|accès à vie|par e-?mail|"
     r"formation en ligne|cours en ligne|download|herunterlad|zum ausdrucken|druckbar|sofortige[rn]? (?:zugriff|zugang)|"
     r"sofort-?zugang|videokurs|online-?kurs|ratgeber|vorlagen|arbeitsbl|kein abo|einmalzahlung|digitale[sn]? produkt|"
     r"acesso imediato|acesso vitalício|para imprimir|material digital|apostila|videoaulas|curso online|kit digital|"
-    r"no seu e-?mail|templates?\b|planner|printable|instant access|fichier|prêt(?:e|es)? à imprimer|kein versand", re.I)
+    r"no seu e-?mail|templates?\b|planner|printable|instant access|fichier|prêt(?:e|es)? à imprimer|kein versand|"
+    r"acceso inmediato|acceso de por vida|descarga inmediata|descargable|para imprimir|imprimibles?|libro digital|"
+    r"en tu correo|plantillas|pago único|sin suscripción", re.I)
 FISICO = re.compile(
     r"livraison|frais de port|expédi|livré|colis|en stock|versand(?!kosten)|lieferung|versandkostenfrei|auf lager|"
     r"portes grátis|envio grátis|portes incluídos|encomenda|loja física|nos magasins|im laden|"
     r"crème|creme|sérum|serum|parfum|gélules|kapseln|cápsulas|suplemento|complément alimentaire|nahrungsergänzung|"
     r"matelas|matratze|chaussures|schuhe|sapatos|vêtement|kleidung|roupas?\b|bijou|schmuck|joias?\b|"
-    r"restaurant|hôtel|hotel|réservez|reserv|immobili|imobili|assurance|versicherung|seguro|crédit|kredit|crédito", re.I)
+    r"restaurant|hôtel|hotel|réservez|reserv|immobili|imobili|assurance|versicherung|seguro|crédit|kredit|crédito|"
+    r"envío gratis|envio gratis|gastos de envío|entrega a domicilio|en tienda|zapatos|ropa\b|joyas?\b", re.I)
+# servico presencial (clinica, consulta, agendamento): nao e' produto digital
+SERVICO = re.compile(r"agende|agendar|marque já|marcação|consulta (?:gratuita|grátis)|clínica|clinique|cabinet|rendez-vous|"
+                     r"termin buchen|termin vereinbaren|praxis in|pide (?:tu )?cita|reserva tu|dentista|dentaire|zahnarzt|"
+                     r"implantes?|ortodont", re.I)
 PROIBIDO = re.compile(
     r"minceur|maigrir|perte de poids|perdre du poids|\d+ ?kilos?|régime|ventre plat|graisse|abnehmen|gewicht verlieren|"
     r"bauchfett|diät|emagrec|perder peso|barriga|gordura|dieta|érection|erektion|ereção|testostéron|testosteron|prostat|"
     r"potenz|libido|revenus? passifs?|passives einkommen|renda extra|ganhar dinheiro|gagner de l'argent|geld verdienen|"
     r"zweite einkommensquelle|2\. standbein|crypto|krypto|cripto|trading|bourse|börse|aktien|forex|paris sportifs|"
     r"sportwetten|apostas|casino|dropshipping|afiliad|affiliate|\bmlm\b|investissement|investimento|geldanlage|"
-    r"finanças pessoais|literacia financeira|finances personnelles|finanzielle freiheit", re.I)
+    r"finanças pessoais|literacia financeira|finances personnelles|finanzielle freiheit|"
+    r"adelgaz|bajar de peso|perder kilos|ingresos pasivos|ganar dinero|dinero extra|criptomoneda|apuestas|"
+    r"inversión|invertir en", re.I)
 # titulo da landing que entrega produto fisico (livro impresso personalizado, aparelho, pulseira)
 FISICO_TITULO = re.compile(r"personnalisé|personalisiert|personalizado|\bband\b|bracelet|armband|montre|\buhr\b|gerät|appareil|"
                            r"aparelho|device|matelas|coussin|kissen", re.I)
 ISCA = re.compile(r"gratuit|offert|kostenlos|gratis|grátis|\bfree\b|webinaire|webinar|masterclass|aula gratuita|"
-                  r"workshop gratuito|\[0€\]|0 €", re.I)
+                  r"workshop gratuito|\[0€\]|0 €|clase gratuita|regístrate|registrate|inscríbete", re.I)
 ASSINATURA = re.compile(r"abonnement|abonnez|\babo\b|monatlich|pro monat|par mois|/mois|/monat|por mês|mensalidade|"
                         # ⛔ "app" sozinho nao: oferta "sem tela" cita o app como o inimigo ("em vez do app")
                         r"lern-app|app store|google play|baixe o app|télécharge[zr]? l'app|lade die app|test(?:e|ez) gratuitement|kostenlos testen|"
-                        r"tage kostenlos|jours gratuits|essai gratuit|teste grátis|software|logiciel|plattform|plateforme|saas", re.I)
+                        r"tage kostenlos|jours gratuits|essai gratuit|teste grátis|software|logiciel|plattform|plateforme|saas|"
+                        r"suscripción mensual|al mes\b|/mes\b|prueba gratis|descarga la app", re.I)
 # curso de carreira, certificacao, mentoria, recrutamento: ticket alto e dificil de virar low ticket
 FORMACAO = re.compile(r"certifica|zertifi|torna-te|tornar-se|devenir (?:coach|praticien|formateur|thérapeute|naturopathe)|"
                       r"\bwerde\b|ausbildung zu[mr]|weiterbildung|formação (?:profissional|certificada|completa)|curso profissional|"
-                      r"mentoria|mentorat|coaching|jobgarantie|reconversion|bootcamp|recrut|einstellen|fahrer finden", re.I)
-NAO_ASSINATURA = re.compile(r"pas d'abonnement|sans abonnement|kein abo|ohne abo|sem assinatura|sem mensalidade|zéro abonnement", re.I)
+                      r"mentoria|mentorat|coaching|jobgarantie|reconversion|bootcamp|recrut|einstellen|fahrer finden|"
+                      r"últimas plazas|plazas limitadas|matrícula|titulación|formación profesional|conviértete en|"
+                      r"asistente veterinari|auxiliar de", re.I)
+NAO_ASSINATURA = re.compile(r"pas d'abonnement|sans abonnement|kein abo|ohne abo|sem assinatura|sem mensalidade|zéro abonnement|"
+                            r"sin suscripción|sin mensualidad", re.I)
 
 
 class Parado(Exception):
@@ -367,7 +384,7 @@ def agrupar(ads, hoje=None):
                                       "mercados": collections.Counter(), "idiomas": collections.Counter(),
                                       "corpos": collections.Counter(), "titulos": collections.Counter(),
                                       "termos": collections.Counter(), "dig": 0, "fis": 0, "proib": 0, "isca": 0,
-                                      "assin": 0, "form": 0, "textos": []})
+                                      "assin": 0, "form": 0, "serv": 0, "textos": []})
         dd, r = _dias(a, hoje), a.get("eu_total_reach") or 0
         g["paginas"][a["page_id"]] += 1; g["nomes"][a["page_id"]] = a.get("page_name") or "?"
         g["n"] += 1; g["alc"] += r; g["max_dias"] = max(g["max_dias"], dd)
@@ -385,6 +402,7 @@ def agrupar(ads, hoje=None):
         g["isca"] += bool(ISCA.search(tit + " " + corpo[:250]))
         g["assin"] += bool(ASSINATURA.search(NAO_ASSINATURA.sub(" ", txt)))
         g["form"] += bool(FORMACAO.search(txt) or re.match(r"(formation|formacao|school|akademie)\.", d or ""))
+        g["serv"] += bool(SERVICO.search(txt))
         if corpo and len(g["textos"]) < 3 and corpo[:60] not in [x[:60] for x in g["textos"]]: g["textos"].append(corpo[:400])
     return grupos
 
@@ -393,7 +411,7 @@ def candidatos(grupos):
     out = []
     for g in grupos.values():
         n = g["n"]
-        if n < 3 or (g["dominio"] or "") in LOJAS: continue
+        if n < 3 or (g["dominio"] or "") in LOJAS or MARCA.search(g["dominio"] or ""): continue
         dig, fis, proib = g["dig"] / n, g["fis"] / n, g["proib"] / n
         if dig < 0.25 or fis > max(0.15, dig / 2) or proib > 0.15: continue
         dup = g["corpos"].most_common(1)[0][1] if g["corpos"] else 0
@@ -402,7 +420,7 @@ def candidatos(grupos):
         out.append({"chave": g["chave"], "dominio": g["dominio"], "score": round(score, 1), "alcance": g["alc"],
                     "anuncios": n, "anuncios_15d": g["n15"], "max_dias": g["max_dias"], "dup_max": dup,
                     "digital": round(dig, 2), "isca": round(g["isca"] / n, 2), "assinatura": round(g["assin"] / n, 2),
-                    "formacao": round(g["form"] / n, 2),
+                    "formacao": round(g["form"] / n, 2), "servico": round(g["serv"] / n, 2),
                     "paginas": [{"id": pid, "nome": g["nomes"][pid], "anuncios": k} for pid, k in g["paginas"].most_common(3)],
                     "mercados": dict(g["mercados"]), "idiomas": dict(g["idiomas"].most_common(6)),
                     "titulos": [t for t, _ in g["titulos"].most_common(4)], "textos": g["textos"],
@@ -523,7 +541,7 @@ def nota(o):
     buraco = 1.0 if o["buraco"] else (0.4 if min(o["presenca"].values() or [100]) < 20 else 0.0)
     n = 10 * (0.40 * escala + 0.20 * persist + 0.25 * buraco + 0.15 * o["digital"])
     # ⭐ o alvo e' low ticket a €10: o que nao vira low ticket cai para o fim da lista (mas fica visivel)
-    pen = {"isca": 5, "fisico": 5, "assinatura": 4, "formacao": 4, "ticket_alto": 4, "novo": 1}
+    pen = {"isca": 5, "fisico": 5, "servico": 5, "marca": 6, "assinatura": 4, "formacao": 4, "ticket_alto": 4, "novo": 1}
     n -= sum(pen.get(f, 0) for f in o["bandeiras"])
     return round(max(0.0, min(10.0, n)) * 2) / 2
 
@@ -543,8 +561,11 @@ def montar_ofertas(rid, cands, pags, lps, hoje=None):
         if p["alcance_ue"] > 50_000 and (p["alcance_ue"] - p["alcance_15d"]) / p["alcance_ue"] > 0.4: bandeiras.append("escalando")
         if c["isca"] >= 0.4: bandeiras.append("isca")
         tit_lp = lp.get("titulo") or ""
-        if c["assinatura"] >= 0.3 or ASSINATURA.search(NAO_ASSINATURA.sub(" ", tit_lp)): bandeiras.append("assinatura")
-        if c.get("formacao", 0) >= 0.3: bandeiras.append("formacao")
+        if c["assinatura"] >= 0.3 or ASSINATURA.search(NAO_ASSINATURA.sub(" ", tit_lp)) or ASSINATURA.search(c["dominio"] or ""):
+            bandeiras.append("assinatura")
+        if c.get("formacao", 0) >= 0.3 or FORMACAO.search(tit_lp): bandeiras.append("formacao")
+        if c.get("servico", 0) >= 0.3 or SERVICO.search(tit_lp): bandeiras.append("servico")
+        if p["alcance_ue"] > ALCANCE_MARCA or MARCA.search(lp.get("final") or ""): bandeiras.append("marca")
         if (lp.get("fisico", 0) >= 3 and lp["fisico"] > lp.get("digital", 0)) or FISICO_TITULO.search(tit_lp): bandeiras.append("fisico")
         if PROIBIDO.search(tit_lp): continue
         if (lp.get("preco_tipico") or lp.get("preco_min") or 0) > 60: bandeiras.append("ticket_alto")

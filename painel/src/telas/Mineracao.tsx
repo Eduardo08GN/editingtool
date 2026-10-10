@@ -43,6 +43,8 @@ const BANDEIRA: Record<string, { texto: string; tom: "ok" | "voce" | "no" | "run
   assinatura: { texto: "Assinatura/app", tom: "no", dica: "parece assinatura, app ou software" },
   fisico: { texto: "Físico?", tom: "no", dica: "a landing fala em frete/envio ou o produto é um objeto" },
   ticket_alto: { texto: "Ticket alto", tom: "voce", dica: "o preço que mais aparece na landing passa de 60" },
+  servico: { texto: "Serviço", tom: "no", dica: "clínica, consulta ou agendamento: serviço presencial, não produto digital" },
+  marca: { texto: "Marca grande", tom: "no", dica: "alcance acima de 15 milhões ou loja/jogo conhecido: não é oferta low ticket" },
   formacao: { texto: "Curso/carreira", tom: "voce", dica: "formação profissional, certificação, mentoria ou recrutamento: difícil de virar low ticket" },
 };
 
