@@ -27,7 +27,13 @@ const PAIS: Record<string, string> = {
   FI: "Finlândia", CZ: "Tchéquia", RO: "Romênia", HU: "Hungria", SK: "Eslováquia", SI: "Eslovênia", HR: "Croácia",
   BG: "Bulgária", RE: "Reunião", GP: "Guadalupe", MQ: "Martinica", GF: "Guiana Fr.",
 };
-const IDIOMA_MERCADO: Record<string, string> = { FR: "Francês", DE: "Alemão", PT: "Portugal" };
+const IDIOMA_MERCADO: Record<string, string> = { FR: "Francês", DE: "Alemão", PT: "Portugal", ES: "Espanha" };
+const EXEMPLO_TERMOS: Record<string, string> = {
+  FR: "ex.: astuce de 7 secondes\nméthode Montessori\nla bible des",
+  DE: "ex.: Zungentrick\nin nur 3 Minuten\nMontessori zum Ausdrucken",
+  PT: "ex.: truque dos 7 segundos\nmétodo montessori",
+  ES: "ex.: truco de 7 segundos\nmétodo Montessori\nla biblia de",
+};
 
 const BANDEIRA: Record<string, { texto: string; tom: "ok" | "voce" | "no" | "run" | "neutra"; dica: string }> = {
   escalando: { texto: "Escalando", tom: "run", dica: "mais de 40% do alcance veio de anúncios com menos de 15 dias" },
@@ -295,7 +301,7 @@ function NovaMineracao({ est, ctx, fechar, puxar }: { est: EstadoMineracao; ctx:
         <label className="label" htmlFor="termos-novos">Adicionar seus termos em {est.mercados[aba]?.nome} (um por linha)</label>
         <div className="linha-campo">
           <textarea id="termos-novos" className="campo termos-novos" rows={3} value={texto} onChange={(e) => setTexto(e.target.value)}
-                    placeholder={aba === "DE" ? "ex.: Zungentrick\nin nur 3 Minuten\nMontessori zum Ausdrucken" : aba === "PT" ? "ex.: truque dos 7 segundos\nmétodo montessori" : "ex.: astuce de 7 secondes\nméthode Montessori\nla bible des"}
+                    placeholder={EXEMPLO_TERMOS[aba] ?? "um termo por linha"}
                     onKeyDown={(e) => { if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) adicionar(); }} />
           <button className="btn btn-ghost" type="button" disabled={!texto.trim() || rodando === "adicionar"} onClick={adicionar}>
             {rodando === "adicionar" ? <Girando /> : <Plus size={16} aria-hidden />}Adicionar
