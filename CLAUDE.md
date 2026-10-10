@@ -35,6 +35,19 @@ player, refazer um so') · **Nova campanha** (colar o mapa de angulos, escolher 
 Codigo: `editor/servidor.py` (FastAPI, so' 127.0.0.1, senha por sessao) + `painel/` (React/Vite;
 `npm run build` gera `painel/dist`, que vai no git para ninguem precisar de Node).
 
+## Atualizar a ferramenta (quando a pessoa pedir "atualiza a ferramenta")
+
+Faça tudo sozinho, sem pedir nada à pessoa:
+1. Feche a ferramenta: encerre o processo que escuta na porta 8791
+   (`Get-NetTCPConnection -LocalPort 8791 -State Listen | % { Stop-Process -Id $_.OwningProcess -Force }`).
+2. Na pasta da ferramenta: `git pull --ff-only`. Se o git reclamar de alteração local em arquivo da ferramenta,
+   rode `git stash` e repita (nunca apague `.env`, `mineracao/` ou `campanhas/`).
+3. `python -m pip install -r requirements.txt` (rápido quando nada mudou).
+4. Abra de novo: `Start-Process EditingTool.cmd` (na pasta da ferramenta).
+5. Confira que a janela abriu; se mostrar a tela antiga, Ctrl+F5 na janela.
+Depois desta primeira vez o `EditingTool.cmd` já se atualiza sozinho ao abrir (git pull), e as minerações
+que o Eduardo compartilha aparecem na aba **Mineração** como "do time".
+
 ## Motor de render (Ajustes → "Motor de render")
 
 - **Remotion** (padrao desde 2026-10-03, o operador achou "bem melhor"): legenda com a palavra falada
