@@ -1,5 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type KeyboardEvent as TeclaReact, type PointerEvent as PonteiroReact, type ReactNode } from "react";
-import { AlertTriangle, Check, ChevronDown, ExternalLink, FileUp, Pickaxe, Play, Plus, RotateCcw, Search, Square, ThumbsDown, ThumbsUp, Trash2, X } from "lucide-react";
+import { AlertTriangle, Check, ChevronDown, ExternalLink, FileUp, Pickaxe, Play, Plus, RotateCcw, Search, Share2, Square, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
 import { abrirLink, enviar, ler, type BancoTermos, type Decisao, type EstadoMineracao, type FaseMineracao, type Oferta, type RodadaMineracao } from "../api";
 import type { Ctx } from "../App";
 import { Girando, useAcao } from "../componentes/base";
@@ -716,6 +716,7 @@ export function Mineracao({ ctx }: { ctx: Ctx }) {
   if (!est) return <div className="tela"><div className="panel vazio"><Girando /><p>Abrindo a mineração…</p></div></div>;
   const aprovadas = ofertas?.filter((o) => o.decisao.status === "aprovada").length ?? 0;
   const vivas = ofertas?.filter((o) => o.decisao.status !== "descartada").length ?? 0;
+  const pendentes = rodadas.filter((r) => !r.compartilhada && !r.publicada && r.status === "pronta").length;
   const mostrada = est.rodando ? rodadas.find((r) => r.id === est.rodada) ?? escolhida ?? rodadas[0] ?? null : escolhida ?? rodadas[0] ?? null;
 
   return (
@@ -730,16 +731,28 @@ export function Mineracao({ ctx }: { ctx: Ctx }) {
           {rodadas.length > 0 && (
             <select className="campo campo-rodada" aria-label="Rodada" value={ver} onChange={(e) => escolher(e.target.value)}>
               <option value={TODAS}>Todas as rodadas ({rodadas.length})</option>
-              {rodadas.map((r) => <option key={r.id} value={r.id}>{nomeRodada(r)} · {r.mercados.join("/")} · {r.ofertas ?? 0} ofertas</option>)}
+              {rodadas.map((r) => <option key={r.id} value={r.id}>{r.compartilhada ? "👥 " : ""}{nomeRodada(r)} · {r.mercados.join("/")} · {r.ofertas ?? 0} ofertas{r.compartilhada ? " · do time" : ""}</option>)}
             </select>
           )}
-          {escolhida && (
+          {escolhida && !escolhida.compartilhada && (
             <button className="btn btn-ghost btn-icon-lg" type="button" disabled={est.rodando && est.rodada === escolhida.id}
                     onClick={() => setPainel("excluir")} aria-label="Excluir esta rodada" title="Excluir esta rodada"><Trash2 size={17} /></button>
           )}
+          {escolhida?.compartilhada && <span className="selo-time" title="Rodada que veio do time pelo GitHub: você vê e avalia, mas não exclui"><Users size={14} aria-hidden />do time</span>}
           <button className="btn btn-ghost" type="button" disabled={est.rodando} onClick={() => setPainel("importar")}>
             <FileUp size={16} aria-hidden />Importar planilha
           </button>
+          {rodadas.some((r) => !r.compartilhada) && (
+            <button className="btn btn-ghost" type="button" disabled={est.rodando || !!rodando}
+                    title={pendentes ? `${pendentes} rodada(s) ainda não foram para o time` : "envia de novo as rodadas e as suas decisões"}
+                    onClick={() => rodar("compartilhar", async () => {
+                      const r = await enviar<{ enviado: boolean; rodadas: number; ofertas?: number }>("/api/mineracao/compartilhar"); puxar();
+                      ctx.avisar(r.enviado ? `Compartilhado: ${r.rodadas} rodada(s), ${numero(r.ofertas ?? 0)} ofertas. O sócio recebe ao abrir o EditingTool.` : "O time já tem tudo: nada novo para enviar.");
+                    })}>
+              {rodando === "compartilhar" ? <Girando /> : <Share2 size={16} aria-hidden />}Compartilhar com o time
+              {pendentes > 0 && <span className="badge-pend">{pendentes}</span>}
+            </button>
+          )}
           <button className="btn btn-primary" type="button" disabled={est.rodando} onClick={() => setPainel(painel === "nova" ? null : "nova")}>
             <Pickaxe size={16} aria-hidden />Nova mineração
           </button>

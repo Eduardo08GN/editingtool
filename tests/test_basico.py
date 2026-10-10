@@ -148,6 +148,23 @@ def test_mineracao_le_planilha_do_time():
     assert mineracao._host("https://www.Exemplo.fr/fr/?a=1") == "exemplo.fr"
 
 
+def test_mineracao_decisoes_do_time_e_locais():
+    import json, os, tempfile
+    from editor import mineracao
+    d = tempfile.mkdtemp()
+    velho = (mineracao.DECISOES, mineracao.DECISOES_TIME)
+    mineracao.DECISOES, mineracao.DECISOES_TIME = os.path.join(d, "local.json"), os.path.join(d, "time.json")
+    try:
+        json.dump({"a.com": {"status": "aprovada", "obs": "do time"}}, open(mineracao.DECISOES_TIME, "w"))
+        assert mineracao.decisoes()["a.com"]["status"] == "aprovada"
+        mineracao.decidir("a.com", status="")                       # o socio desfaz no PC dele
+        assert "status" not in mineracao.decisoes()["a.com"] and mineracao.decisoes()["a.com"]["obs"] == "do time"
+        mineracao.decidir("b.com", nota=7)
+        assert mineracao.decisoes()["b.com"]["nota"] == 7
+    finally:
+        mineracao.DECISOES, mineracao.DECISOES_TIME = velho
+
+
 if __name__ == "__main__":  # noqa
     for n, f in list(globals().items()):
         if n.startswith("test_"): f(); print("OK", n)

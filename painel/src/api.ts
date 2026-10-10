@@ -71,6 +71,8 @@ export interface RodadaMineracao {
   id: string; criada: string; mercados: string[]; max_por_termo: number; finalistas: number;
   fase: FaseMineracao; status: "rodando" | "pronta" | "parada" | "erro"; erro?: string | null; ofertas?: number; nota?: string;
   nome?: string; tipo?: "planilha"; n_termos?: number | null;
+  compartilhada?: boolean;   // veio do time pelo GitHub (compartilhado/mineracao): so' leitura
+  publicada?: boolean;       // este PC ja' mandou esta rodada para o time
 }
 
 // [termo, traducao em portugues, camada]

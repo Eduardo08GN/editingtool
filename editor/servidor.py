@@ -441,6 +441,14 @@ def criar_app(token, hosts):
         mineracao.MINERADOR.log(f"rodada {b.rodada} excluida")
         return {"ok": True}
 
+    @app.post("/api/mineracao/compartilhar")
+    def post_compartilhar():
+        if mineracao.MINERADOR.rodando: raise HTTPException(409, "espere a mineracao atual terminar")
+        try:
+            return {"ok": True, **mineracao.compartilhar(log=mineracao.MINERADOR.log)}
+        except RuntimeError as e:
+            raise HTTPException(400, str(e))
+
     @app.post("/api/mineracao/importar-planilha")
     def post_importar_planilha(b: Planilha):
         if mineracao.MINERADOR.rodando: raise HTTPException(409, "espere a mineracao atual terminar")

@@ -25,6 +25,12 @@ from . import config
 DIR = os.path.join(config.RAIZ, "mineracao")
 RODADAS = os.path.join(DIR, "rodadas")
 DECISOES = os.path.join(DIR, "decisoes.json")
+# ⭐ o que vai para o time pelo git: so' o resultado de cada rodada (rodada.json + ofertas.json) e as decisoes.
+#    Os anuncios brutos (centenas de MB) ficam so' em mineracao/, fora do git.
+COMPARTILHADO = os.path.join(config.RAIZ, "compartilhado", "mineracao")
+RODADAS_TIME = os.path.join(COMPARTILHADO, "rodadas")
+DECISOES_TIME = os.path.join(COMPARTILHADO, "decisoes.json")
+PUBLICADAS = os.path.join(DIR, "publicadas.json")
 BANCO = os.path.join(config.RAIZ, "config", "mineracao.json")
 VERSAO = "v26.0"
 PAUSA = 1.5
@@ -152,7 +158,11 @@ def _token():
 
 
 def _pasta(rid):
-    return os.path.join(RODADAS, rid)
+    """Pasta da rodada: a local (mineracao/) ou, se este PC nao a tem, a do time (compartilhado/)."""
+    local = os.path.join(RODADAS, rid)
+    if not rid or os.path.isdir(local): return local
+    time_ = os.path.join(RODADAS_TIME, rid)
+    return time_ if os.path.isdir(time_) else local
 
 
 def meta(rid):
@@ -179,8 +189,13 @@ def nova_rodada(mercados, max_por_termo=1000, finalistas=40, termos=None):
 
 def rodadas():
     out = []
-    for p in sorted(glob.glob(os.path.join(RODADAS, "*", "rodada.json")), reverse=True):
+    locais = {os.path.basename(os.path.dirname(p)) for p in glob.glob(os.path.join(RODADAS, "*", "rodada.json"))}
+    publicadas = set(config.ler_json(PUBLICADAS, []) or [])
+    arqs = glob.glob(os.path.join(RODADAS, "*", "rodada.json")) +         [p for p in glob.glob(os.path.join(RODADAS_TIME, "*", "rodada.json")) if os.path.basename(os.path.dirname(p)) not in locais]
+    for p in sorted(arqs, key=lambda x: os.path.basename(os.path.dirname(x)), reverse=True):
         m = config.ler_json(p, {}) or {}
+        m["compartilhada"] = os.path.realpath(p).startswith(os.path.realpath(RODADAS_TIME))
+        m["publicada"] = m["compartilhada"] or m.get("id") in publicadas
         ofs = config.ler_json(os.path.join(os.path.dirname(p), "ofertas.json"), []) or []
         m["ofertas"] = len(ofs)
         m["n_termos"] = sum(len(v) for v in (m.get("termos") or {}).values()) or None
@@ -198,6 +213,8 @@ def excluir_rodada(rid):
     """Hard delete da pasta da rodada (anuncios, medicoes, ofertas). As decisoes do operador ficam."""
     import shutil
     pasta = os.path.realpath(_pasta(rid))
+    if rid and os.path.dirname(pasta) == os.path.realpath(RODADAS_TIME):
+        raise SystemExit("essa rodada e' do time (veio do GitHub): so' quem a publicou pode excluir")
     if not rid or os.path.dirname(pasta) != os.path.realpath(RODADAS) or not os.path.isdir(pasta):
         raise SystemExit("rodada nao existe")
     if MINERADOR.rodando and MINERADOR.rodada == rid: raise SystemExit("essa rodada esta' rodando: pare antes de excluir")
@@ -225,21 +242,72 @@ def ofertas_todas():
     return out
 
 
+CAMPOS_DECISAO = ("status", "nota", "obs", "nicho")
+
+
 def decisoes():
-    return config.ler_json(DECISOES, {}) or {}
+    """As do time (compartilhado/) por baixo e as deste PC por cima. "" no local apaga o campo do time."""
+    out = {k: dict(v) for k, v in (config.ler_json(DECISOES_TIME, {}) or {}).items()}
+    for k, e in (config.ler_json(DECISOES, {}) or {}).items():
+        out[k] = {**out.get(k, {}), **e}
+    for k in list(out):
+        out[k] = {c: v for c, v in out[k].items() if v not in ("", None)}
+        if not any(c in out[k] for c in CAMPOS_DECISAO): out.pop(k)
+    return out
 
 
 def decidir(chave, **kw):
-    """Guarda a decisao do operador por OFERTA (dominio): vale em todas as rodadas."""
-    d = decisoes(); e = d.setdefault(chave, {})
+    """Guarda a decisao do operador por OFERTA (dominio): vale em todas as rodadas. So' grava no arquivo local."""
+    d = config.ler_json(DECISOES, {}) or {}
+    e = d.setdefault(chave, {})
+    time_ = (config.ler_json(DECISOES_TIME, {}) or {}).get(chave, {})
     for k, v in kw.items():
-        if k not in ("status", "nota", "obs", "nicho"): continue
-        if v is None or v == "": e.pop(k, None)
+        if k not in CAMPOS_DECISAO: continue
+        if v is None or v == "":
+            if time_.get(k): e[k] = ""                 # apaga por cima do que veio do time
+            else: e.pop(k, None)
         else: e[k] = v
     e["quando"] = datetime.datetime.now().isoformat(timespec="seconds")
-    if not any(k in e for k in ("status", "nota", "obs", "nicho")): d.pop(chave, None)
+    if not any(k in e for k in CAMPOS_DECISAO): d.pop(chave, None)
     config.escrever_json(DECISOES, d)
-    return d.get(chave)
+    return decisoes().get(chave)
+
+
+def compartilhar(log=print):
+    """Publica no GitHub (este repositorio) o resultado das rodadas prontas deste PC + as decisoes.
+    O socio recebe com o git pull que o EditingTool.cmd faz ao abrir."""
+    import shutil
+    ids = [m["id"] for m in rodadas() if not m.get("compartilhada") and m.get("status") == "pronta"]
+    os.makedirs(RODADAS_TIME, exist_ok=True)
+    for rid in ids:
+        dst = os.path.join(RODADAS_TIME, rid); os.makedirs(dst, exist_ok=True)
+        m = meta(rid); m.pop("atualizada", None)
+        config.escrever_json(os.path.join(dst, "rodada.json"), m)
+        ofs = config.ler_json(os.path.join(RODADAS, rid, "ofertas.json"), []) or []
+        with open(os.path.join(dst, "ofertas.json"), "w", encoding="utf-8") as f: json.dump(ofs, f, ensure_ascii=False)
+    for rid in set(config.ler_json(PUBLICADAS, []) or []) - set(ids):   # publicada daqui e excluida depois: sai do time
+        if not os.path.isdir(os.path.join(RODADAS, rid)): shutil.rmtree(os.path.join(RODADAS_TIME, rid), ignore_errors=True)
+    config.escrever_json(PUBLICADAS, sorted(ids))
+    config.escrever_json(DECISOES_TIME, decisoes())
+    rel = os.path.relpath(COMPARTILHADO, config.RAIZ).replace(os.sep, "/")
+
+    def git(*a):
+        return config.run(["git", *a], cwd=config.RAIZ, capture_output=True, text=True, encoding="utf-8", errors="replace")
+    git("add", "-A", "--", rel)
+    if not git("status", "--porcelain", "--", rel).stdout.strip():
+        log("nada novo para compartilhar: o time ja' tem tudo"); return {"rodadas": len(ids), "enviado": False}
+    n = sum(len(config.ler_json(os.path.join(RODADAS_TIME, r, "ofertas.json"), []) or []) for r in ids)
+    r = git("commit", "-m", f"Mineracao compartilhada: {len(ids)} rodada(s), {n} ofertas", "--", rel)
+    if r.returncode != 0: raise RuntimeError("git commit falhou: " + (r.stderr or r.stdout)[-300:])
+    r = git("push", "origin", "HEAD")
+    if r.returncode != 0:                                     # alguem mandou antes: traz e manda de novo
+        git("pull", "--rebase", "--autostash", "origin", "HEAD")
+        r = git("push", "origin", "HEAD")
+    if r.returncode != 0:
+        raise RuntimeError("nao consegui enviar ao GitHub (so' quem tem permissao no repositorio compartilha): "
+                           + (r.stderr or r.stdout).strip()[-300:])
+    log(f"compartilhado com o time: {len(ids)} rodada(s), {n} ofertas")
+    return {"rodadas": len(ids), "ofertas": n, "enviado": True}
 
 
 def ofertas(rid):

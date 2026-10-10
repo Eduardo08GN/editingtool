@@ -586,3 +586,9 @@ textarea.campo.od-obs { min-height: 76px; font: 400 13px/1.5 var(--ow-font-body)
 .col-alca:hover::after, .col-alca:focus-visible::after, .col-alca:active::after { background: var(--ow-sun); top: 0; bottom: 0; }
 body.redimensionando, body.redimensionando * { cursor: col-resize !important; user-select: none !important; }
 .legenda-tabela .btn-sm { min-height: 26px; padding: 0 9px; font-size: 12px; }
+
+/* mineracao compartilhada com o time */
+.selo-time { display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 12px; border-radius: var(--ow-radius);
+  font: 500 12.5px/1 var(--ow-font-body); color: var(--ow-accent); background: var(--ow-accent-soft); }
+.badge-pend { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: var(--ow-radius-pill);
+  font: 600 11px/1 var(--ow-font-mono); color: var(--ow-sun-ink); background: var(--ow-sunset); }
